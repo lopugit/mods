@@ -3,7 +3,7 @@ window.MDT = window?.MDT || {}
 const prod = true
 
 if (prod) {
-  MDT.baseUrl = 'https://cdn.statically.io/gh/lopugit/mods/master/' 
+  MDT.baseUrl = 'https://cdn.jsdelivr.net/gh/lopugit/mods@master/' 
 } else {
   MDT.baseUrl = 'https://localhost:3993/file?url='
 }
