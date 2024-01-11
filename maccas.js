@@ -1,3 +1,12 @@
+window.MDT = window?.MDT || {}
+
+const prod = true
+
+if (prod) {
+  MDT.baseUrl = 'https://cdn.statically.io/gh/lopugit/mods/master/' 
+} else {
+  MDT.baseUrl = 'https://localhost:3993/file?url='
+}
 
 (async () => {
   
@@ -101,7 +110,7 @@
           
         ` }, "module", "ChakraUI")
         
-        await loadScript("https://localhost:3993/file?url=maccas.jsx", "text/jsx", true)
+        await loadScript(MDT.baseUrl+"maccas.jsx", "text/jsx", true)
         
         console.log('[McDev] Transforming Script Tags')
         window.Babel.transformScriptTags()

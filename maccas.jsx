@@ -38,8 +38,6 @@ const refreshable = [
 
 console.log('[McDev] Loaded React App')
 
-window.MDT = {}
-
 var App = (props) => {
   
   const location = useLocation()
@@ -586,7 +584,7 @@ var App = (props) => {
                                 bg="white"
                               >
                                 <Flex position="absolute" top="0" left="0" width="100%" height="100%" alignItems="center" justifyContent="center" >
-                                  <img width="160px" src="https://localhost:3993/file?url=McLoading4.gif"></img>
+                                  <img width="160px" src={window?.MDT?.baseUrl + "McLoading4.gif"}></img>
                                 </Flex>
                                 {getCachedIframe(screenCount, orientation, i, width, height)}
                               </Box>
