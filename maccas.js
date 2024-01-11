@@ -2,10 +2,12 @@ window.MDT = window?.MDT || {}
 
 const allScripts = document.querySelectorAll('script')
 
-const prod = allScripts?.length > 0 && Array.from(allScripts).some(script => script.src?.includes('maccas.js') && script.src?.includes('jsdelivr'))
+const injectedScriptSrc = Array.from(allScripts).find(script => script.src?.includes('maccas.js'))
+const prod = injectedScriptSrc?.src?.includes('jsdelivr')
 
 if (prod) {
-  MDT.baseUrl = 'https://cdn.jsdelivr.net/gh/lopugit/mods@master/' 
+  const version = injectedScriptSrc.src.split('@')[1].split('/')[0]
+  MDT.baseUrl = `https://cdn.jsdelivr.net/gh/lopugit/mods@${version}/`
 } else {
   MDT.baseUrl = 'https://localhost:3993/file?url='
 }
