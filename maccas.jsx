@@ -157,6 +157,12 @@ var App = (props) => {
   
   const debouncedRefresh = React.useMemo(() => debounce(refresh, 1000), [refresh])
   
+  const paramWhitelist = [
+    'debug',
+    'no_mdt',
+    'scale'
+  ]
+  
   const createUrlFromState = (state, noSet) => {
     
     try {
@@ -166,7 +172,9 @@ var App = (props) => {
         setOldParams(location.search)
       }
       for (let [key, value] of Object.entries(state)) {
-        params.set(key, value)
+        if (key?.startsWith('__') || paramWhitelist?.includes(key)) {
+          params.set(key, value)
+        }
       }
       const newUrl = `${location.pathname}?${params.toString()}`
       return newUrl
@@ -210,6 +218,8 @@ var App = (props) => {
         debouncedRefresh()
       }
     }
+    
+    setOldState(state)
         
   }, [state])  
   
@@ -371,39 +381,73 @@ var App = (props) => {
         {/* This will render all state and allow all values to be editable with special interactions for certain state values/types depending on schema */}
         <Box display={state?.open ? 'block' : 'none'} maxH={state?.varsMaxH} overflowY="scroll">
           
-          {Object.entries(state).map(([key, value]) => {
+          {/* sort keys starting with __ to the top but also alphabetically */}
+          {
+            Object.entries(state)
+            ?.sort(([key1, value1], [key2, value2]) => {
+              
+              if (key1?.startsWith('__') && !key2?.startsWith('__')) {
+                return -1
+              } else if (!key1?.startsWith('__') && key2?.startsWith('__')) {
+                return 1
+              } else {
+                return key1?.localeCompare?.(key2)
+              }
+              
+            })
+            ?.map(([key, value]) => {
             
               let input = null
               
-              const baseInput = <Input color="black" padding={8} fontFamily="speedee" outline="none" borderRadius="8" value={value} onChange={(e) => set(key, e.target.value)} />
+              const baseInput = <Input color="black" padding={8} fontFamily="speedee" outline="none" borderRadius="8" value={String(value)} onChange={(e) => {
+                
+                const val = e.target.value
+                
+                if (val == Number(val)) {
+                  if (val?.[val?.length-1] === ".") {
+                    set(key, val)
+                  } else {
+                    set(key, Number(val))
+                  }
+                } else {
+                  set(key, val)
+                }
+                
+              }} />
 
               
               if (typeof value === 'boolean') {
                 
                 input = (
                   <>
-                    <Box cursor="pointer" padding={8} w="100%" bg="white" fontFamily="speedee" borderRadius={8} color="black" onClick={() => set(key, !value)}>{value ? '✅' : '❌'}</Box>
+                    <Box w="auto" cursor="pointer" padding={8} bg="white" fontFamily="speedee" borderRadius={8} color="black" onClick={() => set(key, !value)}>{value ? '✅' : '❌'}</Box>
                     {/* <Switch as="div" size="lg" isChecked={value} /> */}
                   </>
                 )
                 // input = <Button onClick={() => set(key, !value)}>{value ? 'true' : 'false'}</Button>
               } else if (typeof value === 'number') {
                 
-                input = <Flex flexDir="row">
+                input = <Flex w="auto" flexDir="row">
                   {baseInput}
                   <Grid ml={2} gap={3}>
                     <GridItem bg="white" borderRadius="4" textAlign="center">
-                      <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => set(key, value + 1)}>+</Flex>
+                      <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => {
+                        const increment = key === 'scale' ? 0.25 : 1
+                        set(key, value + increment)
+                      }}>+</Flex>
                     </GridItem>
                     <GridItem bg="white" borderRadius="4" textAlign="center">
-                      <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => set(key, value - 1)}>-</Flex>
+                      <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => {
+                        const increment = key === 'scale' ? 0.25 : 1
+                        set(key, value - increment)
+                      }}>-</Flex>
                     </GridItem>
                   </Grid>
                 </Flex>
               
               } else if (key === '__orientation') {
                 
-                input = <Flex flexDir="row">
+                input = <Flex w="auto" flexDir="row">
                   {baseInput}
                   <Grid ml={4} gap={3}>
                     <GridItem bg="white" borderRadius="4" textAlign="center">
@@ -424,19 +468,18 @@ var App = (props) => {
               } else {
                 input = baseInput
               }
-            
               
               return (
-                <Box mb={6} display="flex" flexDirection="row" alignItems="center" justifyContent="space-between">
-                  <Box position="relative" fontSize="16px" fontWeight="400">
+                <Box mb={6} display="flex" flexGrow={0} flexShrink={1} flexDirection="column">
+                  <Flex flexDir="row" w="auto" flexShrink={0} position="relative" fontSize="16px" fontWeight="400" my={8}>
                     {key}
-                    <Box position="absolute" top={-6} right={-15} cursor="pointer" fontSize="8px" onClick={() => deleteKey(key)}>🗑️</Box>
-                  </Box>
-                  <Box>
+                    <Box ml={4} cursor="pointer" fontSize="10px" onClick={() => deleteKey(key)}>🗑️</Box>
+                  </Flex>
+                  <Flex w="auto" flexShrink={0}>
                     
                     {input}
                     
-                  </Box>
+                  </Flex>
                 </Box>
               )
               
