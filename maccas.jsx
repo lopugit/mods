@@ -372,12 +372,19 @@ var App = (props) => {
             
           </img>
         </Box>
-        <Box fontSize="36px" pb={4} display={state?.open ? 'block' : 'none'}>
-          McDev
-        </Box>
+        <Flex flexDir="row">
+          <Box fontSize="36px" pb={4} display={state?.open ? 'block' : 'none'}>
+            McDev
+          </Box>
+          <Box cursor="pointer" px={18} mt={8} opacity={state?.hideData ? 1 : 0.75} onClick={() => {
+            set('hideData', !state?.hideData)
+          }}>
+            ✏️
+          </Box>
+        </Flex>
         
         {/* This will render all state and allow all values to be editable with special interactions for certain state values/types depending on schema */}
-        <Box display={state?.open ? 'block' : 'none'} maxH={state?.varsMaxH} overflowY="scroll">
+        <Box display={(state?.open && !state?.hideData) ? 'block' : 'none'} maxH={state?.varsMaxH} overflowY="scroll">
           
           {/* sort keys starting with __ to the top but also alphabetically */}
           {
@@ -589,14 +596,19 @@ var App = (props) => {
                                 {getCachedIframe(screenCount, orientation, i, width, height)}
                               </Box>
                             </Flex>
-                            <Box py={10}>
-                              {
-                                (
-                                  i === state?.__screen_no
-                                  && orientation === state?.__orientation
-                                  && screenCount === state?.__no_of_screens
-                                ) ? '🌈🦄✨🍔🍟' : '👀'}
-                            </Box>
+                            <Flex flexDir="row" gap={8} py={10}>
+                              <Box color="white">
+                                {i}
+                              </Box>
+                              <Box>
+                                {
+                                  (
+                                    i === state?.__screen_no
+                                    && orientation === state?.__orientation
+                                    && screenCount === state?.__no_of_screens
+                                  ) ? '🌈🦄✨🍔🍟' : '👀'}
+                              </Box>
+                            </Flex>
                           </Box>
                         )
                         

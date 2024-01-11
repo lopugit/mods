@@ -1,6 +1,8 @@
 window.MDT = window?.MDT || {}
 
-const prod = true
+const allScripts = document.querySelectorAll('script')
+
+const prod = allScripts?.length > 0 && Array.from(allScripts).some(script => script.src?.includes('maccas.js') && script.src?.includes('jsdelivr'))
 
 if (prod) {
   MDT.baseUrl = 'https://cdn.jsdelivr.net/gh/lopugit/mods@master/' 
