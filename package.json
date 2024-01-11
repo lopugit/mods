@@ -1,0 +1,19 @@
+{
+  "name": "gitlabmods",
+  "version": "1.0.0",
+  "description": "",
+  "main": "mod.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "emoji-name-map": "^1.2.9",
+    "express": "^4.18.2",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0",
+    "path": "^0.12.7"
+  }
+}
