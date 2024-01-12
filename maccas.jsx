@@ -400,322 +400,379 @@ var App = (props) => {
   // template
   
   return (
-    <Box
-      maxHeight="90vh"
-      overflow="scroll"
-      cursor={!state?.open ? 'pointer' : 'auto'}
-      onClick={() => {
-        if (!state?.open) {
-          set('open', true)
-        }
-      }}
-    >
-      <Box
-        zIndex={9999999}
-        sx={{
-          '*': {
-            "line-height": "100% !important",
-          },
-        }}
+    <>
+      <Flex
+        opacity={state?.copied ? 1 : 0}
+        transition={!state?.copied ? "opacity 1200ms ease" : "opacity 50ms ease"}
         position="fixed"
-        display="flex"
-        flexDir="column"
-        bottom="5%"
-        right="5%"
-        width={state?.open ? state.fixedWidth : "auto"}
-        padding={16}
-        color="white"
-        borderRadius="16px"
+        top={"1vw"}
+        right={"1vw"}
         bg="#DD2514"
-        transform={`scale(${scale})`}
-        transformOrigin="bottom right"
+        padding={24}
+        border={`4px solid #FFCD27`}
+        borderRadius="12px"
+        color="white"
+        fontSize={"24px"}
       >
-        
-        {!state?.open && (
-          <Box width="60px" height="56px">
-            
-          </Box>
-        )}
-        
+        Copied to Clipboard
+        <Box ml={18}>📎</Box>
+      </Flex>
 
-        <Box cursor="pointer" onClick={() => set('open', !state?.open)} position="absolute" top={-22} right={22} maxWidth="48px">
-          <img lazy src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png">
-            
-          </img>
-        </Box>
-        <Flex flexDir="row" display={state?.open ? 'flex' : 'none'}>
-          <Box fontSize="36px" pb={8} >
-            McDev
-          </Box>
-          <Box cursor="pointer" px={18} mt={8} opacity={state?.hideData ? 1 : 0.75} onClick={() => {
-            set('hideData', !state?.hideData)
-          }}>
-            ✏️
-          </Box>
-        </Flex>
-        
-        {/* This will render all state and allow all values to be editable with special interactions for certain state values/types depending on schema */}
-        <Box display={(state?.open && !state?.hideData) ? 'block' : 'none'} maxH={state?.varsMaxH} overflowY="scroll">
-          
-          {/* sort keys starting with __ to the top but also alphabetically */}
-          {
-            Object.entries(state)
-            ?.sort(([key1, value1], [key2, value2]) => {
-              
-              if (key1?.startsWith('__') && !key2?.startsWith('__')) {
-                return -1
-              } else if (!key1?.startsWith('__') && key2?.startsWith('__')) {
-                return 1
-              } else {
-                return key1?.localeCompare?.(key2)
-              }
-              
-            })
-            ?.map(([key, value]) => {
-            
-              let input = null
-              
-              const baseInput = <Input color="black" padding={8} fontFamily="speedee" outline="none" borderRadius="8" value={String(value)} onChange={(e) => {
-                
-                const val = e.target.value
-                
-                console.log('[McDev] Setting key', key)
-                
-                if (val == Number(val)) {
-                  if (val?.[val?.length-1] === ".") {
-                    set(key, val)
-                  } else {
-                    set(key, Number(val))
-                  }
-                } else {
-                  set(key, val)
-                }
-                
-              }} />
-
-              
-              if (typeof value === 'boolean') {
-                
-                input = (
-                  <>
-                    <Box w="auto" cursor="pointer" padding={8} bg="white" fontFamily="speedee" borderRadius={8} color="black" onClick={() => set(key, !value)}>{value ? '✅' : '❌'}</Box>
-                    {/* <Switch as="div" size="lg" isChecked={value} /> */}
-                  </>
-                )
-                // input = <Button onClick={() => set(key, !value)}>{value ? 'true' : 'false'}</Button>
-              } else if (typeof value === 'number') {
-                
-                input = <Flex w="auto" flexDir="row">
-                  {baseInput}
-                  <Grid ml={2} gap={3}>
-                    <GridItem bg="white" borderRadius="4" textAlign="center">
-                      <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => {
-                        const increment = key === 'scale' ? scaleChange : 1
-                        set(key, value + increment)
-                      }}>+</Flex>
-                    </GridItem>
-                    <GridItem bg="white" borderRadius="4" textAlign="center">
-                      <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => {
-                        const increment = key === 'scale' ? scaleChange : 1
-                        set(key, value - increment)
-                      }}>-</Flex>
-                    </GridItem>
-                  </Grid>
-                </Flex>
-              
-              } else if (key === '__orientation') {
-                
-                input = <Flex w="auto" flexDir="row">
-                  {baseInput}
-                  <Grid ml={4} gap={3}>
-                    <GridItem bg="white" borderRadius="4" textAlign="center">
-                      <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="20px" p={8} width="100%" height="100%" onClick={() => {
-                        
-                        if (value === 'horizontal') {
-                          set(key, 'vertical')
-                        } else {
-                          set(key, 'horizontal')
-                        }
-                      }}>
-                        <img width="24px" src="https://emoji.aranja.com/static/emoji-data/img-apple-160/1f501.png" />
-                      </Flex>
-                    </GridItem>
-                  </Grid>
-                </Flex>
-                
-              } else {
-                input = <Flex>
-                  {baseInput}
-                </Flex>
-              }
-              
-              return (
-                <Box mb={6} display="flex" flexGrow={0} flexShrink={1} flexDirection="column">
-                  <Flex flexDir="row" w="auto" flexShrink={0} position="relative" fontSize="16px" fontWeight="400" my={8}>
-                    {key}
-                    <Box ml={4} cursor="pointer" fontSize="10px" onClick={() => deleteKey(key)}>🗑️</Box>
-                  </Flex>
-                  <Flex w="auto" flexShrink={0}>
-                    
-                    {input}
-                    
-                  </Flex>
-                </Box>
-              )
-              
+      <Box
+        maxHeight="90vh"
+        overflow="scroll"
+        cursor={!state?.open ? 'pointer' : 'auto'}
+        onClick={() => {
+          if (!state?.open) {
+            set('open', true)
           }
+        }}
+      >
+        <Box
+          zIndex={9999999}
+          sx={{
+            '*': {
+              "line-height": "100% !important",
+            },
+          }}
+          position="fixed"
+          display="flex"
+          flexDir="column"
+          bottom="5%"
+          right="5%"
+          width={state?.open ? state.fixedWidth : "auto"}
+          padding={16}
+          color="white"
+          borderRadius="16px"
+          bg="#DD2514"
+          transform={`scale(${scale})`}
+          transformOrigin="bottom right"
+        >
           
+          {!state?.open && (
+            <Box width="60px" height="56px">
+              
+            </Box>
           )}
           
-        </Box>
-        
-        <Box maxH={state?.previewsMaxH} overflowY="scroll" display={state?.open ? 'block' : 'none'}>
-          {allPreviews?.map(nScreens => {
+
+          <Box cursor="pointer" onClick={() => set('open', !state?.open)} position="absolute" top={-22} right={22} maxWidth="48px">
+            <img lazy src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png">
+              
+            </img>
+          </Box>
+          <Flex flexDir="row" display={state?.open ? 'flex' : 'none'}>
+            <Box fontSize="36px" pb={8} >
+              McDev
+            </Box>
+            <Box cursor="pointer" px={18} mt={8} opacity={state?.hideData ? 1 : 0.75} onClick={() => {
+              set('hideData', !state?.hideData)
+            }}>
+              ✏️
+            </Box>
+          </Flex>
+          
+          {/* This will render all state and allow all values to be editable with special interactions for certain state values/types depending on schema */}
+          <Box display={(state?.open && !state?.hideData) ? 'block' : 'none'} maxH={state?.varsMaxH} overflowY="scroll">
             
-            console.log('nik nScreens', nScreens)
-            
-            const screenCount = nScreens?.[0]?.__no_of_screens
-            
-            const uid = `show${screenCount}`
-            
-            return <Box key={uid} my={32}>
-              <Text cursor="pointer" fontSize="32px" onClick={() => {
+            {/* sort keys starting with __ to the top but also alphabetically */}
+            {
+              Object.entries(state)
+              ?.sort(([key1, value1], [key2, value2]) => {
                 
-                if (!state?.[uid]) {
-                  set([uid, uid+'disp'], true)
+                if (key1?.startsWith('__') && !key2?.startsWith('__')) {
+                  return -1
+                } else if (!key1?.startsWith('__') && key2?.startsWith('__')) {
+                  return 1
                 } else {
-                  set(uid+'disp', !state?.[uid+'disp'])
+                  return key1?.localeCompare?.(key2)
                 }
                 
-            
-              }}>
-                {(screenCount)} Screens
-              </Text>
-              {state?.[uid] && nScreens.map((bank) => {
+              })
+              ?.map(([key, value]) => {
+              
+                let input = null
                 
-                console.log('nik bank', bank)
-                
-                const orientation = bank.__orientation
-                
-                const width =  orientation === 'horizontal' ? 1920 : 1080
-                const height = orientation === 'horizontal' ? 1080 : 1920
-                
-                const uid2 = `show${screenCount}${orientation}`
-                
-                const mappable = Array(bank?.__no_of_screens).fill()
-                
-                console.log('nik uid2', uid2)
-                console.log('nik mappable', mappable)
-                
-                return <Box key={uid2} display={state?.[uid+'disp'] ? 'block' : 'none'} my={24}>
-                  <Flex onClick={() => {
-                    
-                    console.log('nik !state?.[uid2]', !state?.[uid2], state, uid2)
-                    
-                    if (!state?.[uid2]) {
-                      set([uid2, uid2+'disp'], true)
+                const baseInput = <Input color="black" padding={8} fontFamily="speedee" outline="none" borderRadius="8" value={String(value)} onChange={(e) => {
+                  
+                  const val = e.target.value
+                  
+                  console.log('[McDev] Setting key', key)
+                  
+                  if (val == Number(val)) {
+                    if (val?.[val?.length-1] === ".") {
+                      set(key, val)
                     } else {
-                      set(uid2+'disp', !state?.[uid2+'disp'])
+                      set(key, Number(val))
                     }
-                    
-                  }} cursor="pointer" flexDir="row" alignItems="center">
-                    <Text mr={5} fontSize="24px" textTransform="capitalize">
-                      {screenCount} {orientation}
-                    </Text>
-                    {/* map using number of screens hack with array */}
-                    
-                    {mappable.map((i) => {
-                      return <Box mt={-5} ml={2} width={(width / 100) + "px"} height={(height / 100)+'px'} bg="white" borderRadius="3">
-                      </Box>
-                    })}
-                    
+                  } else {
+                    set(key, val)
+                  }
+                  
+                }} />
+
+                
+                if (typeof value === 'boolean') {
+                  
+                  input = (
+                    <>
+                      <Box w="auto" cursor="pointer" padding={8} bg="white" fontFamily="speedee" borderRadius={8} color="black" onClick={() => set(key, !value)}>{value ? '✅' : '❌'}</Box>
+                      {/* <Switch as="div" size="lg" isChecked={value} /> */}
+                    </>
+                  )
+                  // input = <Button onClick={() => set(key, !value)}>{value ? 'true' : 'false'}</Button>
+                } else if (typeof value === 'number') {
+                  
+                  input = <Flex w="auto" flexDir="row">
+                    {baseInput}
+                    <Grid ml={2} gap={3}>
+                      <GridItem bg="white" borderRadius="4" textAlign="center">
+                        <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => {
+                          const increment = key === 'scale' ? scaleChange : 1
+                          set(key, value + increment)
+                        }}>+</Flex>
+                      </GridItem>
+                      <GridItem bg="white" borderRadius="4" textAlign="center">
+                        <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => {
+                          const increment = key === 'scale' ? scaleChange : 1
+                          set(key, value - increment)
+                        }}>-</Flex>
+                      </GridItem>
+                    </Grid>
+                  </Flex>
+                
+                } else if (key === '__orientation') {
+                  
+                  input = <Flex w="auto" flexDir="row">
+                    {baseInput}
+                    <Grid ml={4} gap={3}>
+                      <GridItem bg="white" borderRadius="4" textAlign="center">
+                        <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="20px" p={8} width="100%" height="100%" onClick={() => {
+                          
+                          if (value === 'horizontal') {
+                            set(key, 'vertical')
+                          } else {
+                            set(key, 'horizontal')
+                          }
+                        }}>
+                          <img width="24px" src="https://emoji.aranja.com/static/emoji-data/img-apple-160/1f501.png" />
+                        </Flex>
+                      </GridItem>
+                    </Grid>
                   </Flex>
                   
-                  <Box display={state?.[uid2+'disp'] ? 'block' : 'none'} py={7} width="100%" overflow="scroll">
-                    <Flex flexDir="row" maxWidth="100%" height="auto" overflow="scroll">
-                      {state?.[uid2] && mappable.map((_, fakei) => {
-                        
-                        const i = fakei + 1
-                        
-                        
-                        console.log('will return for ret', uid2)
-                        
-                        return (
-                          <Box key={uid2+"_"+fakei} mr={4} cursor="pointer" onClick={() => {
-                            
-                            setState((state) => {
-                              return {
-                                ...state, 
-                                __no_of_screens: screenCount,
-                                __screen_no: i,
-                                __orientation: orientation,
-                              }
-                            }, 6)
-                            
-                          }}>
-                            <Flex
-                              padding={iframePadding}
-                              alignItems="center"
-                              justifyContent="center"
-                            >
-                              <Box
-                                maxWidth={(width/4) + "px"}
-                                maxHeight={(height/4) + "px"}
-                                position="relative"
-                                overflow="hidden"
-                                bg="white"
-                              >
-                                <Flex position="absolute" top="0" left="0" width="100%" height="100%" alignItems="center" justifyContent="center" >
-                                  <img width="160px" src={window?.MDT?.baseUrl + "McLoading4.gif"}></img>
-                                </Flex>
-                                {getCachedIframe(screenCount, orientation, i, width, height)}
-                              </Box>
-                            </Flex>
-                            <Flex flexDir="row" gap={8} py={10}>
-                              <Box color="white">
-                                {i}
-                              </Box>
-                              <Box>
-                                {
-                                  (
-                                    i === state?.__screen_no
-                                    && orientation === state?.__orientation
-                                    && screenCount === state?.__no_of_screens
-                                  ) ? '🌈🦄✨🍔🍟' : '👀'}
-                              </Box>
-                            </Flex>
-                          </Box>
-                        )
-                        
-                      })}
+                } else {
+                  input = <Flex>
+                    {baseInput}
+                  </Flex>
+                }
+                
+                return (
+                  <Box mb={6} display="flex" flexGrow={0} flexShrink={1} flexDirection="column">
+                    <Flex flexDir="row" w="auto" flexShrink={0} position="relative" fontSize="16px" fontWeight="400" my={8}>
+                      {key}
+                      <Box ml={4} cursor="pointer" fontSize="10px" onClick={() => deleteKey(key)}>🗑️</Box>
+                    </Flex>
+                    <Flex w="auto" flexShrink={0}>
+                      
+                      {input}
                       
                     </Flex>
                   </Box>
-                  
-                </Box>
+                )
                 
-              })}
-            </Box>
+            }
             
-          })}
-        </Box>
+            )}
+            
+          </Box>
           
-        <Flex 
-          userSelect="none"
-          marginTop="12" flexDir="row" gap={8} display={state?.open ? 'flex' : 'none'}>
-          <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" ml="auto" cursor="pointer" onClick={decreaseScale}>
-            <Box mt={3} fontSize="28px">
-              -
-            </Box>
+          <Box maxH={state?.previewsMaxH} overflowY="scroll" display={state?.open ? 'block' : 'none'}>
+            {allPreviews?.map(nScreens => {
+              
+              console.log('nik nScreens', nScreens)
+              
+              const screenCount = nScreens?.[0]?.__no_of_screens
+              
+              const uid = `show${screenCount}`
+              
+              return <Box key={uid} my={32}>
+                <Text cursor="pointer" fontSize="32px" onClick={() => {
+                  
+                  if (!state?.[uid]) {
+                    set([uid, uid+'disp'], true)
+                  } else {
+                    set(uid+'disp', !state?.[uid+'disp'])
+                  }
+                  
+              
+                }}>
+                  {(screenCount)} Screens
+                </Text>
+                {state?.[uid] && nScreens.map((bank) => {
+                  
+                  console.log('nik bank', bank)
+                  
+                  const orientation = bank.__orientation
+                  
+                  const width =  orientation === 'horizontal' ? 1920 : 1080
+                  const height = orientation === 'horizontal' ? 1080 : 1920
+                  
+                  const uid2 = `show${screenCount}${orientation}`
+                  
+                  const mappable = Array(bank?.__no_of_screens).fill()
+                  
+                  console.log('nik uid2', uid2)
+                  console.log('nik mappable', mappable)
+                  
+                  return <Box key={uid2} display={state?.[uid+'disp'] ? 'block' : 'none'} my={24}>
+                    <Flex onClick={() => {
+                      
+                      console.log('nik !state?.[uid2]', !state?.[uid2], state, uid2)
+                      
+                      if (!state?.[uid2]) {
+                        set([uid2, uid2+'disp'], true)
+                      } else {
+                        set(uid2+'disp', !state?.[uid2+'disp'])
+                      }
+                      
+                    }} cursor="pointer" flexDir="row" alignItems="center">
+                      <Text mr={5} fontSize="24px" textTransform="capitalize">
+                        {screenCount} {orientation}
+                      </Text>
+                      {/* map using number of screens hack with array */}
+                      
+                      {mappable.map((i) => {
+                        return <Box mt={-5} ml={2} width={(width / 100) + "px"} height={(height / 100)+'px'} bg="white" borderRadius="3">
+                        </Box>
+                      })}
+                      
+                    </Flex>
+                    
+                    <Box display={state?.[uid2+'disp'] ? 'block' : 'none'} py={7} width="100%" overflow="scroll">
+                      <Flex flexDir="row" maxWidth="100%" height="auto" overflow="scroll">
+                        {state?.[uid2] && mappable.map((_, fakei) => {
+                          
+                          const i = fakei + 1
+                          
+                          
+                          console.log('will return for ret', uid2)
+                          
+                          return (
+                            <Box key={uid2+"_"+fakei} mr={4} cursor="pointer">
+                              <Flex
+                                padding={iframePadding}
+                                alignItems="center"
+                                justifyContent="center"
+                              >
+                                <Box
+                                  maxWidth={(width/4) + "px"}
+                                  maxHeight={(height/4) + "px"}
+                                  position="relative"
+                                  overflow="hidden"
+                                  bg="white"
+                                >
+                                  <Flex position="absolute" top="0" left="0" width="100%" height="100%" alignItems="center" justifyContent="center" >
+                                    <img width="160px" src={window?.MDT?.baseUrl + "McLoading4.gif"}></img>
+                                  </Flex>
+                                  {getCachedIframe(screenCount, orientation, i, width, height)}
+                                </Box>
+                              </Flex>
+                              <Flex flexDir="row" gap={8} py={10}>
+                                <Box color="white">
+                                  {i}
+                                </Box>
+                                <Box
+                                  onClick={() => {
+                                    
+                                    if (
+                                      !(
+                                        i === state?.__screen_no
+                                        && orientation === state?.__orientation
+                                        && screenCount === state?.__no_of_screens
+                                      )
+                                    ) {
+                                      setState((state) => {
+                                        return {
+                                          ...state, 
+                                          __no_of_screens: screenCount,
+                                          __screen_no: i,
+                                          __orientation: orientation,
+                                        }
+                                      }, 6)
+                                    }
+                                    
+                                    
+                                  }}
+                                >
+                                  {
+                                    (
+                                      i === state?.__screen_no
+                                      && orientation === state?.__orientation
+                                      && screenCount === state?.__no_of_screens
+                                    ) ? '🌈🦄✨🍔🍟' : '👀'}
+                                </Box>
+                                <Box 
+                                  onClick={() => {
+                                    
+                                    set('copied', true)
+                                    
+                                    const url = 'localhost:8080'+createUrlFromState({
+                                      ...state,
+                                      debug: true,
+                                      __no_of_screens: screenCount,
+                                      __screen_no: i,
+                                      __orientation: orientation,
+                                    })
+                                    
+                                    const type = "text/plain";
+                                    const blob = new Blob([url], { type });
+                                    const data = [new ClipboardItem({ [type]: blob })];
+                                    
+                                    navigator.clipboard.write(data)
+                                    
+                                    setTimeout(() => {
+                                      set('copied', false)
+                                    }, 2500)
+                                    
+                                  }} 
+                                >
+                                  📎
+                                </Box>
+                              </Flex>
+                            </Box>
+                          )
+                          
+                        })}
+                        
+                      </Flex>
+                    </Box>
+                    
+                  </Box>
+                  
+                })}
+              </Box>
+              
+            })}
           </Box>
-          <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" cursor="pointer" onClick={increaseScale}>
-            <Box mt={3} fontSize="28px">
-              +
+            
+          <Flex 
+            userSelect="none"
+            marginTop="12" flexDir="row" gap={8} display={state?.open ? 'flex' : 'none'}>
+            <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" ml="auto" cursor="pointer" onClick={decreaseScale}>
+              <Box mt={3} fontSize="28px">
+                -
+              </Box>
             </Box>
-          </Box>
-        </Flex>
+            <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" cursor="pointer" onClick={increaseScale}>
+              <Box mt={3} fontSize="28px">
+                +
+              </Box>
+            </Box>
+          </Flex>
+        </Box>
       </Box>
-    </Box>
+    </>
   )
 }
 
