@@ -36,6 +36,52 @@ const refreshable = [
   /^__.*/
 ]
 
+let stateInitialised = false
+
+const initialiseStateFromParams = (forceState, location) => {
+  
+  if (stateInitialised) {
+    return
+  }
+  
+  stateInitialised = true
+  
+  const params = new URLSearchParams(location.search)
+  const newState = forceState ? {...forceState} : {}
+  
+  console.log('nik location.search 11', location.search)
+  console.log('nik params 11', params)
+  
+  for (let [key, value] of params) {
+    
+    console.log('nik key,value 11', key, value)
+    
+    if (value == Number(value)) {
+      newState[key] = Number(value)
+    } else if (value === 'true' || value === 'false') {
+      if (value === 'true') {
+        newState[key] = true
+      } else {
+        newState[key] = false
+      }
+    } else {
+      newState[key] = value
+    }
+    
+  }
+  
+  console.log('nik newState 1', newState)
+  console.log('nik newState?.__inspiration 1', newState?.__inspiration)
+  
+  return newState
+  
+  // setState((state) => {
+  //   return { ...state, ...newState }
+  // }, 4)
+}
+
+
+
 console.log('[McDev] Loaded React App')
 
 var App = (props) => {
@@ -48,27 +94,49 @@ var App = (props) => {
     return JSON.parse(stateString)
   }, [])
   
-  const [state, setState] = React.useState(stateString ? {
+  const [state, setStateAux] = React.useState(initialiseStateFromParams(stateString ? {
     ...cachedState,
     fixedWidth: cachedState?.fixedWidth || "600px",
     fixedHeight: cachedState?.fixedHeight || "600px",
     varsMaxH: cachedState?.varsMaxH || "30vh",
     previewsMaxH: cachedState?.previewsMaxH || "35vh",
-  } : {})
+  } : {}, location))
   
-  const set = (key, value) => {
+  const stateRef = React.useRef(state)
+  
+  const setState = (newState, uid) => {
+    
+    setStateAux((state) => {
+      
+      const realNewState = typeof newState === 'function' ? newState(state) : newState
+      console.log(`[McDev]${uid ? `[${uid}]` : ``} Updating state to`, realNewState)
+      stateRef.current = realNewState
+      
+      return realNewState
+      
+    })
+    
+  }
+  
+  const set = (key, value, uid) => {
+    
+    console.log(`[McDev]${uid ? `[${uid}]` : ``}, 'Set run for key', ${key}, 'with value', ${value}`)
     
     if (typeof key === 'object') {
       
-      const newState = { ...state }
+      const newState = {}
       key?.forEach((key) => {
         newState[key] = value
       }
       )
-      setState(newState)
+      setState((state) => {
+        return { ...state, ...newState }
+      }, 1)
       
     } else {
-      setState({ ...state, [key]: value })
+      setState((state) => {
+        return { ...state, [key]: value }
+      }, 2)
     }
     
   }
@@ -76,12 +144,12 @@ var App = (props) => {
   const deleteKey = (key) => {
     const newState = { ...state }
     delete newState[key]
-    setState(newState)
+    setState(newState, 3)
   }
   
   const scale = React.useMemo(() => state.scale || 1, [state])
   
-  const scaleChange = 0.25
+  const scaleChange = 0.1
   
   const increaseScale = React.useCallback(() => {
     const newScale = (Number(scale) + scaleChange) || 1
@@ -96,10 +164,11 @@ var App = (props) => {
   // update state when location changes
   // map all query params to state
   
-  const updateStateFromParams = () => {
+  const updateStateFromParams = (forceState) => {
     const params = new URLSearchParams(location.search)
-    const newState = {}
+    const newState = forceState ? {...forceState} : {}
     
+    console.log('nik newState 3', newState)
     console.log('nik location.search 3', location.search)
     console.log('nik params 3', params)
     
@@ -107,7 +176,12 @@ var App = (props) => {
       
       console.log('nik key,value 3', key, value)
       
-      if (value == Number(value)) {
+      // check if value contains any latin characters
+      // if so don't cast to number
+      const latinRegex = /[A-Za-z]/
+      const notNumber = latinRegex.test(value)
+      
+      if (!notNumber && value == Number(value)) {
         newState[key] = Number(value)
       } else if (value === 'true' || value === 'false') {
         if (value === 'true') {
@@ -121,19 +195,13 @@ var App = (props) => {
       
     }
     
-    console.log('nik newState 1', newState)
-    console.log('nik newState?.__inspiration 1', newState?.__inspiration)
+    console.log('nik newState 33', newState)
     
     setState((state) => {
       return { ...state, ...newState }
-    })
+    }, 4)
   }
-  
-  React.useEffect(() => {
-    console.log('nik here 1')
-    updateStateFromParams()
-  }, [])
-  
+    
   const [oldSearch, setOldSearch] = React.useState(location.search)
   
   React.useEffect(() => {
@@ -185,13 +253,13 @@ var App = (props) => {
     
   }
   
-  
   React.useEffect(() => {
     
-    console.log('nik here 3')
+    stateRef.current = state
     
-    console.log('nik state 3', state)
-    console.log('nik state?.__inspiration 3', state?.__inspiration)
+    console.log('nik state watcher here 3')
+    
+    console.log('nik state watcher state 3', state)
     
     window.localStorage.setItem('maccas-dev-tools', JSON.stringify(state))
     
@@ -218,7 +286,7 @@ var App = (props) => {
     }
     
     setOldState(state)
-        
+          
   }, [state])  
   
   const iframePadding = 0  
@@ -250,7 +318,7 @@ var App = (props) => {
   // make sure preview display is in sync with show
   React.useEffect(() => {
     
-    const newState = { ...state }
+    const newState = { ...stateRef.current }
     
     allPreviews?.forEach((nScreens) => {
         
@@ -279,7 +347,7 @@ var App = (props) => {
       }
     )
     
-    setState(newState)
+    setState(newState, 5)
     
   }, [allPreviews])
   
@@ -289,6 +357,7 @@ var App = (props) => {
     
     const newUrl = createUrlFromState({
       ...state,
+      debug: true,
       __no_of_screens: screenCount,
       __screen_no: i,
       __orientation: orientation,
@@ -327,6 +396,8 @@ var App = (props) => {
     }
     
   }, [state, iframeRef])
+  
+  // template
   
   return (
     <Box
@@ -372,8 +443,8 @@ var App = (props) => {
             
           </img>
         </Box>
-        <Flex flexDir="row">
-          <Box fontSize="36px" pb={4} display={state?.open ? 'block' : 'none'}>
+        <Flex flexDir="row" display={state?.open ? 'flex' : 'none'}>
+          <Box fontSize="36px" pb={8} >
             McDev
           </Box>
           <Box cursor="pointer" px={18} mt={8} opacity={state?.hideData ? 1 : 0.75} onClick={() => {
@@ -408,6 +479,8 @@ var App = (props) => {
                 
                 const val = e.target.value
                 
+                console.log('[McDev] Setting key', key)
+                
                 if (val == Number(val)) {
                   if (val?.[val?.length-1] === ".") {
                     set(key, val)
@@ -437,13 +510,13 @@ var App = (props) => {
                   <Grid ml={2} gap={3}>
                     <GridItem bg="white" borderRadius="4" textAlign="center">
                       <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => {
-                        const increment = key === 'scale' ? 0.25 : 1
+                        const increment = key === 'scale' ? scaleChange : 1
                         set(key, value + increment)
                       }}>+</Flex>
                     </GridItem>
                     <GridItem bg="white" borderRadius="4" textAlign="center">
                       <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => {
-                        const increment = key === 'scale' ? 0.25 : 1
+                        const increment = key === 'scale' ? scaleChange : 1
                         set(key, value - increment)
                       }}>-</Flex>
                     </GridItem>
@@ -471,7 +544,9 @@ var App = (props) => {
                 </Flex>
                 
               } else {
-                input = baseInput
+                input = <Flex>
+                  {baseInput}
+                </Flex>
               }
               
               return (
@@ -545,7 +620,7 @@ var App = (props) => {
                     
                   }} cursor="pointer" flexDir="row" alignItems="center">
                     <Text mr={5} fontSize="24px" textTransform="capitalize">
-                      {orientation}
+                      {screenCount} {orientation}
                     </Text>
                     {/* map using number of screens hack with array */}
                     
@@ -575,7 +650,7 @@ var App = (props) => {
                                 __screen_no: i,
                                 __orientation: orientation,
                               }
-                            })
+                            }, 6)
                             
                           }}>
                             <Flex
@@ -625,9 +700,19 @@ var App = (props) => {
           })}
         </Box>
           
-        <Flex marginTop="auto" display={state?.open ? 'block' : 'none'}>
-          <Box width="40px" ml="auto" cursor="pointer" onClick={decreaseScale}>➖</Box>
-          <Box width="40px" cursor="pointer" onClick={increaseScale}>➕</Box>
+        <Flex 
+          userSelect="none"
+          marginTop="12" flexDir="row" gap={8} display={state?.open ? 'flex' : 'none'}>
+          <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" ml="auto" cursor="pointer" onClick={decreaseScale}>
+            <Box mt={3} fontSize="28px">
+              -
+            </Box>
+          </Box>
+          <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" cursor="pointer" onClick={increaseScale}>
+            <Box mt={3} fontSize="28px">
+              +
+            </Box>
+          </Box>
         </Flex>
       </Box>
     </Box>
