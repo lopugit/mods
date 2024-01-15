@@ -2,6 +2,7 @@
 const { 
   Box,
   Flex,
+  Center,
   Input,
   Button,
   Text,
@@ -135,33 +136,37 @@ var App = (props) => {
     
     // poll localStorage for changes
     
-    const interval = setInterval(() => {
-      const stateString = window.localStorage.getItem('maccas-dev-tools')
-      
-      if (stateString !== oldStateStringRef?.current) {
-        oldStateStringRef.current = stateString
-        try {
-          const newState = initialiseStateFromParams(JSON.parse(stateString), location, true)
-          setState(newState, 7)
-        } catch {
-          console.error('Error parsing cached state')
+    if (state?.no_mdt) {
+      const interval = setInterval(() => {
+        const stateString = window.localStorage.getItem('maccas-dev-tools')
+        
+        if (stateString !== oldStateStringRef?.current) {
+          console.log('[McDev] Updating state from localStorage')
+          oldStateStringRef.current = stateString
+          try {
+            const newState = initialiseStateFromParams(JSON.parse(stateString), location, true)
+            setState(newState, 7)
+          } catch {
+            console.error('Error parsing cached state')
+          }
         }
-      }
-    }, 500)
+      }, 500)
+      
+      return () => clearInterval(interval)
+    }
     
-    return () => clearInterval(interval)
     
   }, [])
     
   const set = (key, value, uid) => {
     
-    console.log(`[McDev]${uid ? `[${uid}]` : ``}, 'Set run for key', ${key}, 'with value', ${value}`)
+    console.log(`[McDev]${uid ? `[${uid}]` : ``}`, 'Set', `"${key}"`, 'to', `"${value}"`)
     
     if (typeof key === 'object') {
       
       const newState = {}
-      key?.forEach((key) => {
-        newState[key] = value
+      key?.forEach((key, i) => {
+        newState[key] = value instanceof Array ? value[i] : value
       }
       )
       setState((state) => {
@@ -284,7 +289,9 @@ var App = (props) => {
     
     
     if(!state?.no_mdt) {
-      window.localStorage.setItem('maccas-dev-tools', JSON.stringify(state))
+      const stringifiedState = JSON.stringify(state)
+      oldStateStringRef.current = stringifiedState
+      window.localStorage.setItem('maccas-dev-tools', stringifiedState)
     }
     
     window.MDT.state = state
@@ -422,6 +429,11 @@ var App = (props) => {
   
   // template
   
+  const pageTitle = React.useMemo(() => {
+    const title = document.title?.replace('Maccas DMB - ', '')
+    return title
+  }, [])
+  
   return (
     <>
       <Global
@@ -492,22 +504,23 @@ var App = (props) => {
           
           {!state?.open && (
             <Box width="60px" height="56px">
-              
             </Box>
           )}
           
 
           <Box cursor="pointer" onClick={() => set('open', !state?.open)} position="absolute" top={-22} right={22} maxWidth="48px">
             <img lazy src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png">
-              
             </img>
           </Box>
-          <Flex flexDir="row" display={state?.open ? 'flex' : 'none'}>
+          <Flex alignItems="center" flexDir="row" display={state?.open ? 'flex' : 'none'}>
             <Box fontSize="36px" pb={8} >
               McDev
             </Box>
-            <Box px={18} mt={8}>
+            <Box fontSize={24} px={18} mt={-5}>
               🍔
+            </Box>
+            <Box fontSize="36px" pb={8}>
+              {pageTitle}
             </Box>
           </Flex>
           
@@ -626,7 +639,7 @@ var App = (props) => {
             
           </Box>
           
-          {!state?.no_mdt && (
+          {!state?.no_mdt && !state?.killIframes && (
             <Box 
               maxH={state?.previewsMaxH} 
               overflowY="scroll" 
@@ -844,8 +857,32 @@ var App = (props) => {
             display={state?.open ? 'flex' : 'none'}
           >
             
+            <Center cursor="pointer">
+              
+              <Box 
+                onClick={() => {
+                  set('iframeScale', state?.iframeScale - lowerStep)
+                }} 
+                fontSize={12} 
+                p={6} 
+                mt={1}
+              >
+                🍟
+              </Box>
+              <Box 
+                onClick={() => {
+                  set('iframeScale', state?.iframeScale + lowerStep)
+                }} 
+                fontSize={20} 
+                p={6}
+              >
+                🍟
+              </Box>
+              
+            </Center>
+            
             <Box>
-              <Box cursor="pointer" px={16} opacity={!state?.figmaPreview ? 1 : 0.75} onClick={() => {
+              <Box cursor="pointer" px={16} opacity={!state?.figmaPreview ? 1 : 0.45} onClick={() => {
                 set('figmaPreview', state?.figmaPreview ? 0 : 0.5 )
               }}>
                 🥷
@@ -853,15 +890,27 @@ var App = (props) => {
             </Box>
             
             <Box>
-              <Box cursor="pointer" px={16} opacity={!state?.hideIframes ? 1 : 0.75} onClick={() => {
-                set('hideIframes', !state?.hideIframes)
+              <Box cursor="pointer" px={16} opacity={!state?.hideIframes ? 1 : 0.45} onClick={() => {
+                if (state?.killIframes) {
+                  set(['hideIframes', 'killIframes'], [!state?.hideIframes, !state?.hideIframes])
+                } else {
+                  set('hideIframes', !state?.hideIframes)
+                }
               }}>
                 👀
               </Box>
             </Box>
             
             <Box>
-              <Box cursor="pointer" px={16} opacity={!state?.hideData ? 1 : 0.75} onClick={() => {
+              <Box cursor="pointer" px={16} opacity={!state?.killIframes ? 1 : 0.45} onClick={() => {
+                set(['hideIframes', 'killIframes'], !state?.killIframes)
+              }}>
+                ☠️
+              </Box>
+            </Box>
+            
+            <Box>
+              <Box cursor="pointer" px={16} opacity={!state?.hideData ? 1 : 0.45} onClick={() => {
                 set('hideData', !state?.hideData)
               }}>
                 ✏️
