@@ -42,41 +42,46 @@ const refreshable = [
 
 let stateInitialised = false
 
-const initialiseStateFromParams = (forceState, location) => {
+const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
   
-  if (stateInitialised) {
-    return
-  }
-  
-  stateInitialised = true
-  
-  const params = new URLSearchParams(location.search)
-  const newState = forceState ? {...forceState} : {}
-  
-  
-  for (let [key, value] of params) {
-    
-    
-    if (value == Number(value)) {
-      newState[key] = Number(value)
-    } else if (value === 'true' || value === 'false') {
-      if (value === 'true') {
-        newState[key] = true
-      } else {
-        newState[key] = false
-      }
-    } else {
-      newState[key] = value
+  try {
+    if (stateInitialised && !ignoreInitialised) {
+      return
     }
     
+    stateInitialised = true
+    
+    const params = new URLSearchParams(location.search)
+    const newState = forceState ? {...forceState} : {}
+    
+    
+    for (let [key, value] of params) {
+      
+      if (value == Number(value)) {
+        newState[key] = Number(value)
+      } else if (value === 'true' || value === 'false') {
+        if (value === 'true') {
+          newState[key] = true
+        } else {
+          newState[key] = false
+        }
+      } else {
+        newState[key] = value
+      }
+      
+    }
+    
+    
+    return newState
+    
+    // setState((state) => {
+    //   return { ...state, ...newState }
+    // }, 4)
+    
+  } catch (err) {
+    console.error('Error initialising state from params', err)
   }
   
-  
-  return newState
-  
-  // setState((state) => {
-  //   return { ...state, ...newState }
-  // }, 4)
 }
 
 
@@ -87,7 +92,9 @@ var App = (props) => {
   
   const location = useLocation()
   
-  const stateString = window.localStorage.getItem('maccas-dev-tools')
+  const stateString = React.useMemo(() => {
+    return localStorage.getItem('maccas-dev-tools')
+  }, [])
   
   const cachedState = React.useMemo(() => {
     try {
@@ -122,6 +129,30 @@ var App = (props) => {
     
   }
   
+  const oldStateStringRef = React.useRef(stateString)
+
+  React.useEffect(() => {
+    
+    // poll localStorage for changes
+    
+    const interval = setInterval(() => {
+      const stateString = window.localStorage.getItem('maccas-dev-tools')
+      
+      if (stateString !== oldStateStringRef?.current) {
+        oldStateStringRef.current = stateString
+        try {
+          const newState = initialiseStateFromParams(JSON.parse(stateString), location, true)
+          setState(newState, 7)
+        } catch {
+          console.error('Error parsing cached state')
+        }
+      }
+    }, 500)
+    
+    return () => clearInterval(interval)
+    
+  }, [])
+    
   const set = (key, value, uid) => {
     
     console.log(`[McDev]${uid ? `[${uid}]` : ``}, 'Set run for key', ${key}, 'with value', ${value}`)
@@ -812,6 +843,14 @@ var App = (props) => {
             gap={6} 
             display={state?.open ? 'flex' : 'none'}
           >
+            
+            <Box>
+              <Box cursor="pointer" px={16} opacity={!state?.figmaPreview ? 1 : 0.75} onClick={() => {
+                set('figmaPreview', state?.figmaPreview ? 0 : 0.5 )
+              }}>
+                🥷
+              </Box>
+            </Box>
             
             <Box>
               <Box cursor="pointer" px={16} opacity={!state?.hideIframes ? 1 : 0.75} onClick={() => {
