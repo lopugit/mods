@@ -519,9 +519,13 @@ var App = (props) => {
             <Box fontSize={24} px={18} mt={-5}>
               🍔
             </Box>
-            <Box fontSize="36px" pb={8}>
-              {pageTitle}
-            </Box>
+            <Flex alignItems="center" fontSize="36px" pb={8}>
+              {pageTitle?.split('/')?.[0]}
+              <Box px={12} fontSize={24} mt={-2}>
+                🍟
+              </Box>
+              {pageTitle?.split('/')?.[1]}
+            </Flex>
           </Flex>
           
           {/* This will render all state and allow all values to be editable with special interactions for certain state values/types depending on schema */}
@@ -711,7 +715,6 @@ var App = (props) => {
                             height={(height / 100)+'px'} 
                             onClick={
                               () => {
-                                console.log('nik why is i', i)
                                 const newVal = state?.[uid2+'disp'+i] !== false ? false : true
                                 set(uid2+'disp'+i, newVal)
                               }
