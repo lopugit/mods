@@ -475,10 +475,8 @@ var App = (props) => {
             <Box fontSize="36px" pb={8} >
               McDev
             </Box>
-            <Box cursor="pointer" px={18} mt={8} opacity={state?.hideData ? 1 : 0.75} onClick={() => {
-              set('hideData', !state?.hideData)
-            }}>
-              ✏️
+            <Box px={18} mt={8}>
+              🍔
             </Box>
           </Flex>
           
@@ -598,7 +596,13 @@ var App = (props) => {
           </Box>
           
           {!state?.no_mdt && (
-            <Box maxH={state?.previewsMaxH} overflowY="scroll" display={state?.open ? 'block' : 'none'}>
+            <Box 
+              maxH={state?.previewsMaxH} 
+              overflowY="scroll" 
+              display={
+                (state?.open && !state?.hideIframes) ? 'block' : 'none'
+              }
+            >
               {allPreviews?.map(nScreens => {
                 
                 const screenCount = nScreens?.[0]?.__no_of_screens
@@ -798,21 +802,50 @@ var App = (props) => {
               })}
             </Box>
           )}
-            
-          <Flex 
+          
+          <Flex
             userSelect="none"
-            marginTop="12" flexDir="row" gap={8} display={state?.open ? 'flex' : 'none'}>
-            <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" ml="auto" cursor="pointer" onClick={decreaseScale}>
-              <Box mt={3} fontSize="28px">
-                -
+            ml="auto"
+            marginTop="12" 
+            flexDir="row"
+            alignItems="center"
+            gap={6} 
+            display={state?.open ? 'flex' : 'none'}
+          >
+            
+            <Box>
+              <Box cursor="pointer" px={16} opacity={!state?.hideIframes ? 1 : 0.75} onClick={() => {
+                set('hideIframes', !state?.hideIframes)
+              }}>
+                👀
               </Box>
             </Box>
-            <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" cursor="pointer" onClick={increaseScale}>
-              <Box mt={3} fontSize="28px">
-                +
+            
+            <Box>
+              <Box cursor="pointer" px={16} opacity={!state?.hideData ? 1 : 0.75} onClick={() => {
+                set('hideData', !state?.hideData)
+              }}>
+                ✏️
               </Box>
             </Box>
+            
+            <Flex 
+              gap={8}
+              ml={12}
+            >
+              <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" ml="auto" cursor="pointer" onClick={decreaseScale}>
+                <Box mt={3} fontSize="28px">
+                  -
+                </Box>
+              </Box>
+              <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" cursor="pointer" onClick={increaseScale}>
+                <Box mt={3} fontSize="28px">
+                  +
+                </Box>
+              </Box>
+            </Flex>
           </Flex>
+            
         </Box>
       </Box>
     </>
