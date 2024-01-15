@@ -16,7 +16,7 @@ if (prod) {
   
   const href = window.location.href
 
-  if (href?.includes('debug=true') && !href?.includes('no_mdt=true')) {
+  if (href?.includes('debug=true')) {
     
     console.log('[McDev] Loaded Akcelo Maccas Dev Tools')
     
@@ -107,9 +107,10 @@ if (prod) {
           import debounce from "https://esm.sh/debounce@2.0.0";
           window.debounce = debounce
           
-          import * as ChakraUI from 'https://esm.sh/@chakra-ui/react@2.7.1';
+          import * as Emotion from 'https://esm.sh/@emotion/react@11.11.3';
+          window.Emotion = Emotion          
           
-          console.log('nik ChakraUI', ChakraUI)
+          import * as ChakraUI from 'https://esm.sh/@chakra-ui/react@2.7.1';
           window.ChakraUI = ChakraUI
           
         ` }, "module", "ChakraUI")

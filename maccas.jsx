@@ -24,6 +24,10 @@ const {
 } = ChakraUI
 
 const {
+  Global
+} = Emotion
+
+const {
   createBrowserRouter,
   RouterProvider,
   useLocation
@@ -49,12 +53,9 @@ const initialiseStateFromParams = (forceState, location) => {
   const params = new URLSearchParams(location.search)
   const newState = forceState ? {...forceState} : {}
   
-  console.log('nik location.search 11', location.search)
-  console.log('nik params 11', params)
   
   for (let [key, value] of params) {
     
-    console.log('nik key,value 11', key, value)
     
     if (value == Number(value)) {
       newState[key] = Number(value)
@@ -70,8 +71,6 @@ const initialiseStateFromParams = (forceState, location) => {
     
   }
   
-  console.log('nik newState 1', newState)
-  console.log('nik newState?.__inspiration 1', newState?.__inspiration)
   
   return newState
   
@@ -91,7 +90,12 @@ var App = (props) => {
   const stateString = window.localStorage.getItem('maccas-dev-tools')
   
   const cachedState = React.useMemo(() => {
-    return JSON.parse(stateString)
+    try {
+      return JSON.parse(stateString)
+    } catch (err) {
+      console.error('Error parsing cached state', err)
+      throw err
+    }
   }, [])
   
   const [state, setStateAux] = React.useState(initialiseStateFromParams(stateString ? {
@@ -147,17 +151,17 @@ var App = (props) => {
     setState(newState, 3)
   }
   
-  const scale = React.useMemo(() => state.scale || 1, [state])
+  const scale = React.useMemo(() => state?.scale || 1, [state])
   
-  const scaleChange = 0.1
+  const lowerStep = 0.1
   
   const increaseScale = React.useCallback(() => {
-    const newScale = (Number(scale) + scaleChange) || 1
+    const newScale = (Number(scale) + lowerStep) || 1
     set('scale', newScale)
   }, [scale])
   
   const decreaseScale = React.useCallback(() => {
-    const newScale = (Number(scale) - scaleChange) || 1
+    const newScale = (Number(scale) - lowerStep) || 1
     set('scale', newScale)
   }, [scale])
     
@@ -168,13 +172,7 @@ var App = (props) => {
     const params = new URLSearchParams(location.search)
     const newState = forceState ? {...forceState} : {}
     
-    console.log('nik newState 3', newState)
-    console.log('nik location.search 3', location.search)
-    console.log('nik params 3', params)
-    
     for (let [key, value] of params) {
-      
-      console.log('nik key,value 3', key, value)
       
       // check if value contains any latin characters
       // if so don't cast to number
@@ -195,8 +193,6 @@ var App = (props) => {
       
     }
     
-    console.log('nik newState 33', newState)
-    
     setState((state) => {
       return { ...state, ...newState }
     }, 4)
@@ -207,7 +203,6 @@ var App = (props) => {
   React.useEffect(() => {
     if (location.search !== oldSearch) {
       setOldSearch(location.search)
-      console.log('nik here 2')
       updateStateFromParams()
     }
   }, [location])
@@ -217,7 +212,6 @@ var App = (props) => {
   const [oldState, setOldState] = React.useState(state)
   
   const refresh = React.useCallback(() => {
-    console.log('nik debounced refresh')
     window.location.reload()
   }, [])
   
@@ -257,11 +251,10 @@ var App = (props) => {
     
     stateRef.current = state
     
-    console.log('nik state watcher here 3')
     
-    console.log('nik state watcher state 3', state)
-    
-    window.localStorage.setItem('maccas-dev-tools', JSON.stringify(state))
+    if(!state?.no_mdt) {
+      window.localStorage.setItem('maccas-dev-tools', JSON.stringify(state))
+    }
     
     window.MDT.state = state
     
@@ -275,11 +268,9 @@ var App = (props) => {
     // if so, refresh the page
     for (let [key, value] of Object.entries(state)) {
       if (refreshable.includes(key) && value !== oldState[key]) {
-        console.log('nik refreshing 1', key)
         // debounced refresh
         debouncedRefresh()
       } else if (refreshable?.some((r) => r.test?.(key)) && value !== oldState[key]) {
-        console.log('nik refreshing 2', key)
         // debounced refresh
         debouncedRefresh()
       }
@@ -366,10 +357,6 @@ var App = (props) => {
     
     const uid = `iframe${screenCount}${orientation}${i}`
     
-    console.log('nik iframe uid is', uid)
-    
-    console.log('nik iframeRef?.current', iframeRef?.current)
-
     if (!iframeRef?.current?.[uid]) {
       const newIframe = <iframe 
         src={
@@ -379,7 +366,6 @@ var App = (props) => {
         height={height + "px"}
         style={{ 
           transformOrigin: "0 0",
-          transform: `scale(${0.25})`,
           border: 'none',
         }}
       ></iframe>
@@ -389,7 +375,6 @@ var App = (props) => {
       return newIframe
       
     } else {
-      console.log('nik using cached iframe with uid', uid)
       
       return iframeRef.current[uid]
       
@@ -397,10 +382,31 @@ var App = (props) => {
     
   }, [state, iframeRef])
   
+  const lowStepKeys = [
+    'scale',
+    'figmaPreview',
+    'contentPreview',
+    'iframeScale'
+  ]
+  
   // template
   
   return (
     <>
+      <Global
+        styles={{
+          '.figma-preview': {
+            opacity: (state?.figmaPreview == 0 || state?.figmaPreview) ? state?.figmaPreview : 1,
+            zIndex: state?.figmaTop ? 999999 : 0,
+          },
+          '.content-preview': {
+            opacity: (state?.contentPreview == 0 || state?.contentPreview) ? state?.contentPreview : 1,
+          }
+        }}
+      >
+        
+      </Global>
+      
       <Flex
         opacity={state?.copied ? 1 : 0}
         transition={!state?.copied ? "opacity 1200ms ease" : "opacity 50ms ease"}
@@ -427,6 +433,9 @@ var App = (props) => {
             set('open', true)
           }
         }}
+        display={
+          state?.no_mdt ? 'none' : 'block'
+        }
       >
         <Box
           zIndex={9999999}
@@ -440,9 +449,10 @@ var App = (props) => {
           flexDir="column"
           bottom="5%"
           right="5%"
-          width={state?.open ? state.fixedWidth : "auto"}
+          width={state?.open ? state?.fixedWidth : "auto"}
           padding={16}
           color="white"
+          maxH="84vh"
           borderRadius="16px"
           bg="#DD2514"
           transform={`scale(${scale})`}
@@ -528,13 +538,13 @@ var App = (props) => {
                     <Grid ml={2} gap={3}>
                       <GridItem bg="white" borderRadius="4" textAlign="center">
                         <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => {
-                          const increment = key === 'scale' ? scaleChange : 1
+                          const increment = (lowStepKeys?.includes(key)) ? lowerStep : 1
                           set(key, value + increment)
                         }}>+</Flex>
                       </GridItem>
                       <GridItem bg="white" borderRadius="4" textAlign="center">
                         <Flex alignItems="center" justifyContent="center" cursor="pointer" color="black" fontSize="18px" px={8} onClick={() => {
-                          const increment = key === 'scale' ? scaleChange : 1
+                          const increment = (lowStepKeys?.includes(key)) ? lowerStep : 1
                           set(key, value - increment)
                         }}>-</Flex>
                       </GridItem>
@@ -587,174 +597,207 @@ var App = (props) => {
             
           </Box>
           
-          <Box maxH={state?.previewsMaxH} overflowY="scroll" display={state?.open ? 'block' : 'none'}>
-            {allPreviews?.map(nScreens => {
-              
-              console.log('nik nScreens', nScreens)
-              
-              const screenCount = nScreens?.[0]?.__no_of_screens
-              
-              const uid = `show${screenCount}`
-              
-              return <Box key={uid} my={32}>
-                <Text cursor="pointer" fontSize="32px" onClick={() => {
-                  
-                  if (!state?.[uid]) {
-                    set([uid, uid+'disp'], true)
-                  } else {
-                    set(uid+'disp', !state?.[uid+'disp'])
-                  }
-                  
-              
-                }}>
-                  {(screenCount)} Screens
-                </Text>
-                {state?.[uid] && nScreens.map((bank) => {
-                  
-                  console.log('nik bank', bank)
-                  
-                  const orientation = bank.__orientation
-                  
-                  const width =  orientation === 'horizontal' ? 1920 : 1080
-                  const height = orientation === 'horizontal' ? 1080 : 1920
-                  
-                  const uid2 = `show${screenCount}${orientation}`
-                  
-                  const mappable = Array(bank?.__no_of_screens).fill()
-                  
-                  console.log('nik uid2', uid2)
-                  console.log('nik mappable', mappable)
-                  
-                  return <Box key={uid2} display={state?.[uid+'disp'] ? 'block' : 'none'} my={24}>
-                    <Flex onClick={() => {
-                      
-                      console.log('nik !state?.[uid2]', !state?.[uid2], state, uid2)
-                      
-                      if (!state?.[uid2]) {
-                        set([uid2, uid2+'disp'], true)
-                      } else {
-                        set(uid2+'disp', !state?.[uid2+'disp'])
-                      }
-                      
-                    }} cursor="pointer" flexDir="row" alignItems="center">
-                      <Text mr={5} fontSize="24px" textTransform="capitalize">
-                        {screenCount} {orientation}
-                      </Text>
-                      {/* map using number of screens hack with array */}
-                      
-                      {mappable.map((i) => {
-                        return <Box mt={-5} ml={2} width={(width / 100) + "px"} height={(height / 100)+'px'} bg="white" borderRadius="3">
-                        </Box>
-                      })}
-                      
-                    </Flex>
+          {!state?.no_mdt && (
+            <Box maxH={state?.previewsMaxH} overflowY="scroll" display={state?.open ? 'block' : 'none'}>
+              {allPreviews?.map(nScreens => {
+                
+                const screenCount = nScreens?.[0]?.__no_of_screens
+                
+                const uid = `show${screenCount}`
+                
+                return <Box key={uid} my={32}>
+                  <Text cursor="pointer" fontSize="32px" onClick={() => {
                     
-                    <Box display={state?.[uid2+'disp'] ? 'block' : 'none'} py={7} width="100%" overflow="scroll">
-                      <Flex flexDir="row" maxWidth="100%" height="auto" overflow="scroll">
-                        {state?.[uid2] && mappable.map((_, fakei) => {
+                    if (!state?.[uid]) {
+                      set([uid, uid+'disp'], true)
+                    } else {
+                      set(uid+'disp', !state?.[uid+'disp'])
+                    }
+                    
+                
+                  }}>
+                    {(screenCount)} Screens
+                  </Text>
+                  {state?.[uid] && nScreens.map((bank) => {
+                    
+                    
+                    const orientation = bank.__orientation
+                    
+                    const width =  orientation === 'horizontal' ? 1920 : 1080
+                    const height = orientation === 'horizontal' ? 1080 : 1920
+                    
+                    const uid2 = `show${screenCount}${orientation}`
+                    
+                    const mappable = Array(bank?.__no_of_screens).fill()
+                    
+                    return <Box key={uid2} display={state?.[uid+'disp'] ? 'block' : 'none'} my={24}>
+                      <Flex cursor="pointer" flexDir="row" alignItems="center">
+                        <Text 
+                          onClick={() => {
+                            
+                            
+                            if (!state?.[uid2]) {
+                              set([uid2, uid2+'disp'], true)
+                            } else {
+                              set(uid2+'disp', !state?.[uid2+'disp'])
+                            }
+                            
+                          }}  
+                          mr={5} 
+                          fontSize="24px" 
+                          textTransform="capitalize"
+                        >
+                          {/* Horizontal or Vertical */}
+                          {screenCount} {orientation}
+                        </Text>
+                        
+                        {/* map using number of screens hack with array */}
+                        {mappable.map((_, fakei) => {
                           
                           const i = fakei + 1
                           
-                          
-                          console.log('will return for ret', uid2)
-                          
-                          return (
-                            <Box key={uid2+"_"+fakei} mr={4} cursor="pointer">
-                              <Flex
-                                padding={iframePadding}
-                                alignItems="center"
-                                justifyContent="center"
-                              >
-                                <Box
-                                  maxWidth={(width/4) + "px"}
-                                  maxHeight={(height/4) + "px"}
-                                  position="relative"
-                                  overflow="hidden"
-                                  bg="white"
-                                >
-                                  <Flex position="absolute" top="0" left="0" width="100%" height="100%" alignItems="center" justifyContent="center" >
-                                    <img width="160px" src={window?.MDT?.baseUrl + "McLoading4.gif"}></img>
-                                  </Flex>
-                                  {getCachedIframe(screenCount, orientation, i, width, height)}
-                                </Box>
-                              </Flex>
-                              <Flex flexDir="row" gap={8} py={10}>
-                                <Box color="white">
-                                  {i}
-                                </Box>
-                                <Box
-                                  onClick={() => {
-                                    
-                                    if (
-                                      !(
-                                        i === state?.__screen_no
-                                        && orientation === state?.__orientation
-                                        && screenCount === state?.__no_of_screens
-                                      )
-                                    ) {
-                                      setState((state) => {
-                                        return {
-                                          ...state, 
-                                          __no_of_screens: screenCount,
-                                          __screen_no: i,
-                                          __orientation: orientation,
-                                        }
-                                      }, 6)
-                                    }
-                                    
-                                    
-                                  }}
-                                >
-                                  {
-                                    (
-                                      i === state?.__screen_no
-                                      && orientation === state?.__orientation
-                                      && screenCount === state?.__no_of_screens
-                                    ) ? '🌈🦄✨🍔🍟' : '👀'}
-                                </Box>
-                                <Box 
-                                  onClick={() => {
-                                    
-                                    set('copied', true)
-                                    
-                                    const url = 'localhost:8080'+createUrlFromState({
-                                      ...state,
-                                      debug: true,
-                                      __no_of_screens: screenCount,
-                                      __screen_no: i,
-                                      __orientation: orientation,
-                                    })
-                                    
-                                    const type = "text/plain";
-                                    const blob = new Blob([url], { type });
-                                    const data = [new ClipboardItem({ [type]: blob })];
-                                    
-                                    navigator.clipboard.write(data)
-                                    
-                                    setTimeout(() => {
-                                      set('copied', false)
-                                    }, 2500)
-                                    
-                                  }} 
-                                >
-                                  📎
-                                </Box>
-                              </Flex>
-                            </Box>
-                          )
-                          
+                          return <Box 
+                            mt={-5} 
+                            ml={2} 
+                            width={(width / 100) + "px"} 
+                            height={(height / 100)+'px'} 
+                            onClick={
+                              () => {
+                                console.log('nik why is i', i)
+                                const newVal = state?.[uid2+'disp'+i] !== false ? false : true
+                                set(uid2+'disp'+i, newVal)
+                              }
+                            }
+                            cursor="pointer"
+                            transition="all 300ms ease"
+                            _hover={{
+                              opacity: 0.75
+                            }}
+                            opacity={state?.[uid2+'disp'+i] === false ? 0.5 : 1}
+                            bg="white"
+                            borderRadius="3"
+                          >
+                          </Box>
                         })}
                         
                       </Flex>
+                      
+                      <Box display={state?.[uid2+'disp'] ? 'block' : 'none'} py={7} width="100%" overflow="scroll">
+                        <Flex flexDir="row" maxWidth="100%" height="auto" overflow="scroll">
+                          {state?.[uid2] && mappable.map((_, fakei) => {
+                            
+                            const i = fakei + 1
+                            
+                            return (
+                              <>
+                                {!(state?.[uid2+'disp'+i] === false) && (
+                                  <Box 
+                                    sx={{
+                                      "iframe": {
+                                        transform: `scale(${state?.iframeScale || 0.25})`,
+                                      }
+                                    }}
+                                    key={uid2+"_"+fakei} 
+                                    mr={4} 
+                                    cursor="pointer"
+                                  >
+                                    <Flex
+                                      padding={iframePadding}
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <Box
+                                        maxWidth={(width * (state?.iframeScale || 0.25)) + "px"}
+                                        maxHeight={(height * (state?.iframeScale || 0.25)) + "px"}
+                                        position="relative"
+                                        overflow="hidden"
+                                        bg="white"
+                                      >
+                                        <Flex position="absolute" top="0" left="0" width="100%" height="100%" alignItems="center" justifyContent="center" >
+                                          <img width="160px" src={window?.MDT?.baseUrl + "McLoading4.gif"}></img>
+                                        </Flex>
+                                        {getCachedIframe(screenCount, orientation, i, width, height)}
+                                      </Box>
+                                    </Flex>
+                                    <Flex flexDir="row" gap={8} py={10}>
+                                      <Box color="white">
+                                        {i}
+                                      </Box>
+                                      <Box
+                                        onClick={() => {
+                                          
+                                          if (
+                                            !(
+                                              i === state?.__screen_no
+                                              && orientation === state?.__orientation
+                                              && screenCount === state?.__no_of_screens
+                                            )
+                                          ) {
+                                            setState((state) => {
+                                              return {
+                                                ...state, 
+                                                __no_of_screens: screenCount,
+                                                __screen_no: i,
+                                                __orientation: orientation,
+                                              }
+                                            }, 6)
+                                          }
+                                          
+                                          
+                                        }}
+                                      >
+                                        {
+                                          (
+                                            i === state?.__screen_no
+                                            && orientation === state?.__orientation
+                                            && screenCount === state?.__no_of_screens
+                                          ) ? '🌈🦄✨🍔🍟' : '👀'}
+                                      </Box>
+                                      <Box 
+                                        onClick={() => {
+                                          
+                                          set('copied', true)
+                                          
+                                          const url = 'localhost:8080'+createUrlFromState({
+                                            ...state,
+                                            debug: true,
+                                            __no_of_screens: screenCount,
+                                            __screen_no: i,
+                                            __orientation: orientation,
+                                          })
+                                          
+                                          const type = "text/plain";
+                                          const blob = new Blob([url], { type });
+                                          const data = [new ClipboardItem({ [type]: blob })];
+                                          
+                                          navigator.clipboard.write(data)
+                                          
+                                          setTimeout(() => {
+                                            set('copied', false)
+                                          }, 2500)
+                                          
+                                        }} 
+                                      >
+                                        📎
+                                      </Box>
+                                    </Flex>
+                                  </Box>
+                                )}
+                              </>
+                            )
+                          })}
+                          
+                        </Flex>
+                      </Box>
+                      
                     </Box>
                     
-                  </Box>
-                  
-                })}
-              </Box>
-              
-            })}
-          </Box>
+                  })}
+                </Box>
+                
+              })}
+            </Box>
+          )}
             
           <Flex 
             userSelect="none"
