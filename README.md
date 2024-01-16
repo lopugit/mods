@@ -13,3 +13,6 @@ https://cdn.jsdelivr.net/gh/lopugit/mods@${version}/maccas.js
 
 Current version:
 https://cdn.jsdelivr.net/gh/lopugit/mods@1.0.9/maccas.js
+
+Or use CJS!
+https://chromewebstore.google.com/detail/custom-javascript-for-web/ddbjnfjiigjmcpcpkmhogomapikjbjdk 
