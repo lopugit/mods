@@ -139,10 +139,9 @@ var App = (props) => {
   const oldStateStringRef = React.useRef(stateString)
 
   React.useEffect(() => {
-    
+        
     // poll localStorage for changes
-    
-    if (state?.no_mdt) {
+    if (state?.iframeMode) {
       const interval = setInterval(() => {
         const stateString = window.localStorage.getItem('maccas-dev-tools')
         
@@ -261,7 +260,7 @@ var App = (props) => {
   
   const paramWhitelist = [
     'debug',
-    'no_mdt',
+    'iframeMode',
     'mdt',
     'figmaPreview',
     'scale'
@@ -296,7 +295,7 @@ var App = (props) => {
     stateRef.current = state
     
     
-    if(!state?.no_mdt) {
+    if(!state?.iframeMode) {
       const stringifiedState = JSON.stringify(state)
       oldStateStringRef.current = stringifiedState
       window.localStorage.setItem('maccas-dev-tools', stringifiedState)
@@ -398,7 +397,7 @@ var App = (props) => {
       __no_of_screens: screenCount,
       __screen_no: i,
       __orientation: orientation,
-      no_mdt: true,
+      iframeMode: true,
       mdt: true
     }, true)
     
@@ -486,7 +485,7 @@ var App = (props) => {
           }
         }}
         display={
-          state?.no_mdt ? 'none' : 'block'
+          state?.iframeMode ? 'none' : 'block'
         }
       >
         <Box
@@ -652,7 +651,7 @@ var App = (props) => {
             
           </Box>
           
-          {!state?.no_mdt && !state?.killIframes && (
+          {!state?.iframeMode && !state?.killIframes && (
             <Box 
               maxH={state?.previewsMaxH} 
               overflowY="scroll" 

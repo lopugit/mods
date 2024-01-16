@@ -16,7 +16,7 @@ if (prod) {
   
   const href = window.location.href
 
-  if (href?.includes('debug=true')) {
+  if (href?.includes('mdt=true')) {
     
     console.log('[McDev] Loaded Akcelo Maccas Dev Tools')
     
