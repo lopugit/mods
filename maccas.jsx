@@ -263,7 +263,8 @@ var App = (props) => {
     'iframeMode',
     'mdt',
     'figmaPreview',
-    'scale'
+    'scale',
+    'dt_mode'
   ]
   
   const createUrlFromState = (state, noSet) => {
@@ -714,6 +715,11 @@ var App = (props) => {
                         {/* map using number of screens hack with array */}
                         {mappable.map((_, fakei) => {
                           
+                          // if dt_mode true then make i go from length to 1
+                          if (state?.dt_mode) {
+                            fakei = (mappable?.length - fakei - 1)
+                          }
+                          
                           const i = fakei + 1
                           
                           return <Box 
@@ -744,6 +750,12 @@ var App = (props) => {
                       <Box display={state?.[uid2+'disp'] ? 'block' : 'none'} py={7} width="100%" overflow="scroll">
                         <Flex flexDir="row" maxWidth="100%" height="auto" overflow="scroll">
                           {state?.[uid2] && mappable.map((_, fakei) => {
+                            
+                            // if dt_mode true then make i go from length to 1
+                            if (state?.dt_mode) {
+                              fakei = (mappable?.length - fakei - 1)
+                            }
+                          
                             
                             const i = fakei + 1
                             
@@ -867,6 +879,17 @@ var App = (props) => {
             gap={6} 
             display={state?.open ? 'flex' : 'none'}
           >
+            
+            <Box
+              px={16}
+              cursor="pointer"
+              onClick={() => {
+                set('dt_mode', !state?.dt_mode)
+              }}
+              opacity={state?.dt_mode ? 1 : 0.45}
+            >
+              🚘
+            </Box>
             
             <Center cursor="pointer">
               
