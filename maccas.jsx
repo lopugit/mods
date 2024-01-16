@@ -43,6 +43,10 @@ const refreshable = [
 
 let stateInitialised = false
 
+const ignoreInIframe = [
+  'figmaPreview',
+]
+
 const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
   
   try {
@@ -53,21 +57,23 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
     stateInitialised = true
     
     const params = new URLSearchParams(location.search)
-    const newState = forceState ? {...forceState} : {}
+    const newState = forceState ? {...forceState, mdt: true } : { mdt: true }
     
     
     for (let [key, value] of params) {
       
-      if (value == Number(value)) {
-        newState[key] = Number(value)
-      } else if (value === 'true' || value === 'false') {
-        if (value === 'true') {
-          newState[key] = true
+      if (!ignoreInIframe?.includes(key)) {
+        if (value == Number(value)) {
+          newState[key] = Number(value)
+        } else if (value === 'true' || value === 'false') {
+          if (value === 'true') {
+            newState[key] = true
+          } else {
+            newState[key] = false
+          }
         } else {
-          newState[key] = false
+          newState[key] = value
         }
-      } else {
-        newState[key] = value
       }
       
     }
@@ -256,6 +262,8 @@ var App = (props) => {
   const paramWhitelist = [
     'debug',
     'no_mdt',
+    'mdt',
+    'figmaPreview',
     'scale'
   ]
   
@@ -391,6 +399,7 @@ var App = (props) => {
       __screen_no: i,
       __orientation: orientation,
       no_mdt: true,
+      mdt: true
     }, true)
     
     const uid = `iframe${screenCount}${orientation}${i}`
@@ -885,7 +894,7 @@ var App = (props) => {
             </Center>
             
             <Box>
-              <Box cursor="pointer" px={16} opacity={!state?.figmaPreview ? 1 : 0.45} onClick={() => {
+              <Box cursor="pointer" px={16} opacity={state?.figmaPreview ? 1 : 0.45} onClick={() => {
                 set('figmaPreview', state?.figmaPreview ? 0 : 0.5 )
               }}>
                 🥷
