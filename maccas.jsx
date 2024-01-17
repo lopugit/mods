@@ -91,8 +91,6 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
   
 }
 
-
-
 console.log('[McDev] Loaded React App')
 
 var App = (props) => {
@@ -436,13 +434,144 @@ var App = (props) => {
     'iframeScale'
   ]
   
-  // template
-  
   const pageTitle = React.useMemo(() => {
     const title = document.title?.replace('Maccas DMB - ', '')
     return title
   }, [])
   
+  // poll to add adjustment to elements with class .mdt-position
+  React.useEffect(() => {
+    
+    const interval = setInterval(() => {
+      
+      const all = document.querySelectorAll('.mdt-position')
+      
+      all?.forEach((el) => {
+      
+        // if el doesn't have a click event listener
+        // add one that allows dragging the position via changing style.left and style.top
+        if (!el?.__mdt) {
+          
+          el.__mdt = true
+          
+          
+          // on click set grabbedEl to this element
+          el.addEventListener('mousedown', (e) => {
+            
+            // use el.style.left/top instead of bounding client rect
+            
+            
+            // sanitise style left and top into Numbers with decimals, so delete px/% etc..
+            
+            const left = Number(el?.style?.left?.replace?.('px', '')?.replace?.('%', ''))
+            const top = Number(el?.style?.top?.replace?.('px', '')?.replace?.('%', ''))
+                        
+            // store mouse position at grabbed time
+            stateRef.current.grabbedMouseX = e.clientX
+            stateRef.current.grabbedMouseY = e.clientY
+            
+            window.MDT.grabbedEl = el
+            stateRef.current.grabbedLeft = left
+            stateRef.current.grabbedTop = top
+            
+            const boundingClientRect = el.getBoundingClientRect()
+            
+            // store initial mouse offset from origin of element
+            // so we can add this to the new mouse position to get the new left and top
+            // when dragging
+            stateRef.current.grabbedMouseOffsetX = e.clientX - boundingClientRect?.left
+            stateRef.current.grabbedMouseOffsetY = e.clientY - boundingClientRect?.top
+            
+          })
+          
+        }
+                
+      })
+      
+    }, 2000)
+    
+    const onMouseMove = (e) => {
+      
+      const currentEl = window.MDT.grabbedEl
+      
+      if (
+        currentEl && 
+        (typeof stateRef?.current.grabbedLeft === 'number') && 
+        (typeof stateRef?.current.grabbedTop === 'number')
+      ) {
+        
+        // get difference between current mouse position and original mouse position
+        
+        const x = e.clientX - stateRef.current.grabbedMouseX
+        const y = e.clientY - stateRef.current.grabbedMouseY
+        
+        // add or substract difference to current left and top
+        // set new left and top
+        
+        const left = stateRef.current.grabbedLeft
+        const top = stateRef.current.grabbedTop
+        
+        // create new left and new top accounting for new mouse position and original mouse offset from origin
+        
+        const newLeft = left + x
+        const newTop = top + y
+        
+        // set new left and top
+        
+        currentEl.style.left = newLeft + 'px'
+        currentEl.style.top = newTop + 'px'
+                        
+      }
+      
+    }
+    
+    const onMouseUp = (e) => {
+      
+      const el = window.MDT.grabbedEl
+      
+      if (el) {
+        const newTop = Number(el?.style?.top?.replace?.('px', '')?.replace?.('%', ''))
+        const newLeft = Number(el?.style?.left?.replace?.('px', '')?.replace?.('%', ''))
+        
+        const string = `
+          top: "${newTop}px",
+          left: "${newLeft}px",
+        `
+        
+        try {
+          navigator.clipboard.writeText(string)
+          set('copiedText', string)
+          set('copied', true)
+          
+          setTimeout(() => {
+            set('copied', false)
+            setTimeout(() => {
+              set('copiedText', null)
+            }, 1000)
+          }, 1200)
+          
+        } catch (err) {
+          console.error('Error copying to clipboard', err)
+        }
+      }
+      
+      window.MDT.grabbedEl = null
+      stateRef.current.grabbedLeft = null
+      stateRef.current.grabbedTop = null
+    }
+    
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+    
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
+    
+  }, [])
+  
+  // template
   return (
     <>
       <Global
@@ -453,6 +582,17 @@ var App = (props) => {
           },
           '.content-preview': {
             opacity: (state?.contentPreview == 0 || state?.contentPreview) ? state?.contentPreview : 1,
+          },
+          '.no-cursor': {
+            pointerEvents: 'none'
+          },
+          '.mdt-position': {
+            // grab cursor
+            userSelect: 'none',
+            cursor: 'grab',
+            "*" : {
+              userSelect: 'none',
+            }
           }
         }}
       >
@@ -464,6 +604,7 @@ var App = (props) => {
         transition={!state?.copied ? "opacity 1200ms ease" : "opacity 50ms ease"}
         position="fixed"
         top={"1vw"}
+        flexDir="column"
         right={"1vw"}
         bg="#DD2514"
         padding={24}
@@ -472,8 +613,20 @@ var App = (props) => {
         color="white"
         fontSize={"24px"}
       >
-        Copied to Clipboard
-        <Box ml={18}>📎</Box>
+        <Flex>
+          Copied to Clipboard
+          <Box ml={18}>📎</Box>
+        </Flex>
+        {state?.copiedText && (
+          <Box
+            mt={12}
+            fontSize={"16px"}
+            fontFamily="speedee"
+            color="white"
+          >
+            {state?.copiedText}
+          </Box>
+        )}
       </Flex>
 
       <Box
