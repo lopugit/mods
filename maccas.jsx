@@ -463,9 +463,38 @@ var App = (props) => {
             
             // sanitise style left and top into Numbers with decimals, so delete px/% etc..
             
-            const left = Number(el?.style?.left?.replace?.('px', '')?.replace?.('%', ''))
-            const top = Number(el?.style?.top?.replace?.('px', '')?.replace?.('%', ''))
-                        
+            let left, top
+            
+            // get left and top from tailwind styling in the format
+            // left-[100px] top-[100px]
+            // if it exists, otherwise use e.style.left/top
+            
+            left = el?.style?.left?.replace?.('px', '')?.replace?.('%', '')
+            top = el?.style?.top?.replace?.('px', '')?.replace?.('%', '')
+                                    
+            
+            if (
+              stateRef?.current?.tailwindStyling
+              && !(left && top)
+              // && !(Object.hasOwnProperty?.(el, 'style') && Object.hasOwnProperty?.(el?.style, 'left'))
+            ) {
+              
+              const leftMatch = el?.className?.match?.(/left-\[(.*?)\]/)
+              const topMatch = el?.className?.match?.(/top-\[(.*?)\]/)
+              
+              if (leftMatch?.[1]) {
+                left = Number(leftMatch?.[1]?.replace?.('px', '')?.replace?.('%', ''))
+              }
+              
+              if (topMatch?.[1]) {
+                top = Number(topMatch?.[1]?.replace?.('px', '')?.replace?.('%', ''))
+              }
+              
+            } else {
+              left = Number(left)
+              top = Number(top)
+            }
+            
             // store mouse position at grabbed time
             stateRef.current.grabbedMouseX = e.clientX
             stateRef.current.grabbedMouseY = e.clientY
@@ -481,6 +510,22 @@ var App = (props) => {
             // when dragging
             stateRef.current.grabbedMouseOffsetX = e.clientX - boundingClientRect?.left
             stateRef.current.grabbedMouseOffsetY = e.clientY - boundingClientRect?.top
+            
+            const debug = true
+            
+            if (debug) {
+              
+              console.log('[McDebug][mousedown] left', left)
+              console.log('[McDebug][mousedown] top', top)
+              console.log('[McDebug][mousedown] boundingClientRect', boundingClientRect)
+              console.log('[McDebug][mousedown] boundingClientRect?.left', boundingClientRect?.left)
+              console.log('[McDebug][mousedown] boundingClientRect?.top', boundingClientRect?.top)
+              console.log('[McDebug][mousedown] stateRef.current.grabbedMouseOffsetX', stateRef.current.grabbedMouseOffsetX)
+              console.log('[McDebug][mousedown] stateRef.current.grabbedMouseOffsetY', stateRef.current.grabbedMouseOffsetY)
+              console.log('[McDebug][mousedown] stateRef.current.grabbedMouseX', stateRef.current.grabbedMouseX)
+              console.log('[McDebug][mousedown] stateRef.current.grabbedMouseY', stateRef.current.grabbedMouseY)
+              
+            }
             
           })
           
@@ -516,10 +561,29 @@ var App = (props) => {
         const newLeft = left + x
         const newTop = top + y
         
+        const debug = true
+        
+        if (debug) {
+          console.log('[McDebug][onMouseMove] stateRef.current.grabbedMouseX', stateRef.current.grabbedMouseX)
+          console.log('[McDebug][onMouseMove] stateRef.current.grabbedMouseY', stateRef.current.grabbedMouseY)
+          console.log('[McDebug][onMouseMove] e.clientX', e.clientX)
+          console.log('[McDebug][onMouseMove] e.clientY', e.clientY)
+          console.log('[McDebug][onMouseMove] x', x)
+          console.log('[McDebug][onMouseMove] y', y)
+          console.log('[McDebug][onMouseMove] left', left)
+          console.log('[McDebug][onMouseMove] top', top)
+          console.log('[McDebug][onMouseMove] newLeft', newLeft)
+          console.log('[McDebug][onMouseMove] newTop', newTop)
+        }
+        
+        
         // set new left and top
         
         currentEl.style.left = newLeft + 'px'
         currentEl.style.top = newTop + 'px'
+        
+        stateRef.current.currentGrabbedLeft = newLeft
+        stateRef.current.currentGrabbedTop = newTop
                         
       }
       
@@ -533,11 +597,12 @@ var App = (props) => {
         const newTop = Number(el?.style?.top?.replace?.('px', '')?.replace?.('%', ''))
         const newLeft = Number(el?.style?.left?.replace?.('px', '')?.replace?.('%', ''))
         
-        const string = `
-          top: "${newTop}px",
-          left: "${newLeft}px",
-        `
-        
+        const string = stateRef?.current?.tailwindStyling ? `top-[${newTop}px] left-[${newLeft}px]`
+          : `
+            top: "${newTop}px",
+            left: "${newLeft}px",
+          `
+          
         try {
           navigator.clipboard.writeText(string)
           set('copiedText', string)
@@ -1030,12 +1095,30 @@ var App = (props) => {
             flexDir="row"
             alignItems="center"
             gap={6} 
+            cursor="pointer"
             display={state?.open ? 'flex' : 'none'}
+            sx={{
+              "> *": {
+                userSelect: 'none',
+                px: 16
+              }
+            }}
           >
             
             <Box
-              px={16}
-              cursor="pointer"
+              opacity={state?.tailwindStyling ? 1 : 0.45}
+              onClick={() => {
+                set('tailwindStyling', !state?.tailwindStyling)
+              }}
+            >
+              
+              🐒💨
+              
+            </Box>
+            
+            <Box
+            
+            
               onClick={() => {
                 set('dt_mode', !state?.dt_mode)
               }}
@@ -1044,7 +1127,7 @@ var App = (props) => {
               🚘
             </Box>
             
-            <Center cursor="pointer">
+            <Center>
               
               <Box 
                 onClick={() => {
@@ -1069,7 +1152,7 @@ var App = (props) => {
             </Center>
             
             <Box>
-              <Box cursor="pointer" px={16} opacity={state?.figmaPreview ? 1 : 0.45} onClick={() => {
+              <Box opacity={state?.figmaPreview ? 1 : 0.45} onClick={() => {
                 set('figmaPreview', state?.figmaPreview ? 0 : 0.5 )
               }}>
                 🥷
@@ -1077,7 +1160,7 @@ var App = (props) => {
             </Box>
             
             <Box>
-              <Box cursor="pointer" px={16} opacity={!state?.hideIframes ? 1 : 0.45} onClick={() => {
+              <Box opacity={!state?.hideIframes ? 1 : 0.45} onClick={() => {
                 if (state?.killIframes) {
                   set(['hideIframes', 'killIframes'], [!state?.hideIframes, !state?.hideIframes])
                 } else {
@@ -1089,7 +1172,7 @@ var App = (props) => {
             </Box>
             
             <Box>
-              <Box cursor="pointer" px={16} opacity={!state?.killIframes ? 1 : 0.45} onClick={() => {
+              <Box opacity={!state?.killIframes ? 1 : 0.45} onClick={() => {
                 set(['hideIframes', 'killIframes'], !state?.killIframes)
               }}>
                 ☠️
@@ -1097,7 +1180,7 @@ var App = (props) => {
             </Box>
             
             <Box>
-              <Box cursor="pointer" px={16} opacity={!state?.hideData ? 1 : 0.45} onClick={() => {
+              <Box opacity={!state?.hideData ? 1 : 0.45} onClick={() => {
                 set('hideData', !state?.hideData)
               }}>
                 ✏️
@@ -1108,12 +1191,12 @@ var App = (props) => {
               gap={8}
               ml={12}
             >
-              <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" ml="auto" cursor="pointer" onClick={decreaseScale}>
+              <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" ml="auto" onClick={decreaseScale}>
                 <Box mt={3} fontSize="28px">
                   -
                 </Box>
               </Box>
-              <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" cursor="pointer" onClick={increaseScale}>
+              <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" onClick={increaseScale}>
                 <Box mt={3} fontSize="28px">
                   +
                 </Box>
