@@ -41,6 +41,11 @@ const refreshable = [
   /^__.*/
 ]
 
+const noRefresh = [
+  "__when",
+  "__where"
+]
+
 let stateInitialised = false
 
 const ignoreInIframe = [
@@ -65,14 +70,31 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
       if (!ignoreInIframe?.includes(key)) {
         if (value == Number(value)) {
           newState[key] = Number(value)
+          // remove leading __
+          newState[key?.slice(
+            2,
+            key?.length
+          )] = Number(value)
         } else if (value === 'true' || value === 'false') {
           if (value === 'true') {
             newState[key] = true
+            newState[key?.slice(
+              2,
+              key?.length
+            )] = true
           } else {
             newState[key] = false
+            newState[key?.slice(
+              2,
+              key?.length
+            )] = false
           }
         } else {
           newState[key] = value
+          newState[key?.slice(
+            2,
+            key?.length
+          )] = value
         }
       }
       
@@ -318,12 +340,14 @@ var App = (props) => {
     // check if any refreshable keys have changed
     // if so, refresh the page
     for (let [key, value] of Object.entries(state)) {
-      if (refreshable.includes(key) && value !== oldState[key]) {
-        // debounced refresh
-        debouncedRefresh()
-      } else if (refreshable?.some((r) => r.test?.(key)) && value !== oldState[key]) {
-        // debounced refresh
-        debouncedRefresh()
+      if (!noRefresh?.includes(key) && value !== oldState[key]) {
+        if (refreshable.includes(key)) {
+          // debounced refresh
+          debouncedRefresh()
+        } else if (refreshable?.some((r) => r.test?.(key))) {
+          // debounced refresh
+          debouncedRefresh()
+        }
       }
     }
     
@@ -720,6 +744,10 @@ var App = (props) => {
     }
     
   }, [])
+  
+  // set up MDTsubscriber
+  console.log('[McDev] Setting up MDTsubscriber', window?.MDTsubscriber)
+  window?.MDTsubscriber?.(true)
   
   // template
   return (
@@ -1191,6 +1219,15 @@ var App = (props) => {
           >
             
             <Box
+              opacity={state?.__inspiration ? 1 : 0.45}
+              onClick={() => {
+                set('__inspiration', !state?.__inspiration)
+              }}
+            >
+              🙏
+            </Box>            
+            
+            <Box
               opacity={state?.tailwindStyling ? 1 : 0.45}
               onClick={() => {
                 set('tailwindStyling', !state?.tailwindStyling)
@@ -1200,6 +1237,7 @@ var App = (props) => {
               🐒💨
               
             </Box>
+
             
             <Box
             
