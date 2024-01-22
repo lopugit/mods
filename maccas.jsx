@@ -135,7 +135,7 @@ var App = (props) => {
   }
   
   const oldStateStringRef = React.useRef(stateString)
-
+  
   React.useEffect(() => {
         
     // poll localStorage for changes
@@ -188,6 +188,13 @@ var App = (props) => {
     const newState = { ...state }
     delete newState[key]
     setState(newState, 3)
+  }
+  
+  try {
+    window.MDT.set = set
+    window.MDT.state = state
+  } catch (err) {
+    console.error('[McDev] Error setting window.MDT.set', err)
   }
   
   const scale = React.useMemo(() => state?.scale || 1, [state])
