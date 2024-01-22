@@ -867,7 +867,10 @@ var App = (props) => {
           flexDir="column"
           bottom="5%"
           right="5%"
-          width={state?.open ? state?.fixedWidth : "auto"}
+          width={
+            state?.hideIframes && state?.hideData ? "auto" :
+              state?.open ? state?.fixedWidth : "auto"
+          }
           padding={16}
           color="white"
           maxH="84vh"
@@ -1249,10 +1252,114 @@ var App = (props) => {
               "> *": {
                 userSelect: 'none',
                 px: 16
+              },
+              "* select::-ms-expand": {
+                display: "none"
               }
             }}
           >
             
+            {/* Screen Selection Dropdown */}
+            <Box
+              // transform={`rotate(${state?.__orientation === 'horizontal' ? 90 : 0}deg)`}
+              // onClick={() => {
+              //   const curOrientation = state?.__orientation
+              //   const newOrientation = curOrientation === 'horizontal' ? 'vertical' : 'horizontal'
+              //   set('__orientation', newOrientation)
+              // }}
+            >
+              
+              <select
+                style={{
+                  outline: "none !important",
+                  border: "none !important",
+                  borderRadius: "8px",
+                  color: "black",
+                  padding: "6px"
+                }}
+                value={
+                  `${state?.__no_of_screens}_${state?.__orientation}_${state?.__screen_no}`
+                }
+                onChange={(e) => {
+                    
+                    const val = e.target.value
+                    
+                    const [screenCount, orientation, i] = val.split('_')
+                    
+                    console.log('nik screenCount', screenCount)
+                    console.log('nik orientation', orientation)
+                    console.log('nik i', i)
+                    
+                    if (
+                      !(
+                        i === state?.__screen_no
+                        && orientation === state?.__orientation
+                        && screenCount === state?.__no_of_screens
+                      )
+                    ) {
+                      setState((state) => {
+                        return {
+                          ...state, 
+                          __no_of_screens: screenCount,
+                          __screen_no: i,
+                          __orientation: orientation,
+                        }
+                      }, 6)
+                    }
+                    
+                }
+              }>
+                {/* Flatten allPreviews into options of number of screens + screen # for that bank */}
+                
+                {allPreviews?.map(nScreens => {
+                    
+                    const screenCount = nScreens?.[0]?.__no_of_screens
+                    
+                    const uid = `show${screenCount}`
+                    
+                    return <optgroup label={screenCount + ' Screens'}>
+                      {nScreens.map((bank) => {
+                        
+                        const orientation = bank.__orientation
+                        
+                        const uid2 = `${screenCount}_${orientation}`
+                        
+                        const mappable = Array(bank?.__no_of_screens).fill()
+                        
+                        return mappable.map((_, fakei) => {
+                          
+                          // if dt_mode true then make i go from length to 1
+                          // if (state?.dt_mode) {
+                          //   fakei = (mappable?.length - fakei - 1)
+                          // }
+                          
+                          const i = fakei + 1
+                          
+                          return <option value={uid2+"_"+i}>{screenCount} {orientation} {i}</option>
+                          
+                        })
+                        
+                      })}
+                    </optgroup>
+                    
+                  }
+                )}
+                
+              </select>
+            </Box>            
+            
+            {/* Flip between __orientation = 'horizontal' and 'vertical' */}
+            <Box
+              transform={`rotate(${state?.__orientation === 'horizontal' ? 90 : 0}deg)`}
+              onClick={() => {
+                const curOrientation = state?.__orientation
+                const newOrientation = curOrientation === 'horizontal' ? 'vertical' : 'horizontal'
+                set('__orientation', newOrientation)
+              }}
+            >
+              📱
+            </Box>            
+
             <Box
               opacity={state?.__inspiration ? 1 : 0.45}
               onClick={() => {
