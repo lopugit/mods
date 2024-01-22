@@ -463,24 +463,33 @@ var App = (props) => {
             
             // sanitise style left and top into Numbers with decimals, so delete px/% etc..
             
-            let left, top
+            let left, top, bottom, right
             
             // get left and top from tailwind styling in the format
             // left-[100px] top-[100px]
             // if it exists, otherwise use e.style.left/top
             
             left = el?.style?.left?.replace?.('px', '')?.replace?.('%', '')
+            right = el?.style?.right?.replace?.('px', '')?.replace?.('%', '')
             top = el?.style?.top?.replace?.('px', '')?.replace?.('%', '')
+            bottom = el?.style?.bottom?.replace?.('px', '')?.replace?.('%', '')
                                     
             
             if (
               stateRef?.current?.tailwindStyling
-              && !(left && top)
+              && !(
+                (left && top)
+                || (left && bottom)
+                || (right && top)
+                || (right && bottom)
+              )
               // && !(Object.hasOwnProperty?.(el, 'style') && Object.hasOwnProperty?.(el?.style, 'left'))
             ) {
               
               const leftMatch = el?.className?.match?.(/left-\[(.*?)\]/)
               const topMatch = el?.className?.match?.(/top-\[(.*?)\]/)
+              const rightMatch = el?.className?.match?.(/right-\[(.*?)\]/)
+              const bottomMatch = el?.className?.match?.(/bottom-\[(.*?)\]/)
               
               if (leftMatch?.[1]) {
                 left = Number(leftMatch?.[1]?.replace?.('px', '')?.replace?.('%', ''))
@@ -490,9 +499,18 @@ var App = (props) => {
                 top = Number(topMatch?.[1]?.replace?.('px', '')?.replace?.('%', ''))
               }
               
+              if (bottomMatch?.[1]) {
+                bottom = Number(bottomMatch?.[1]?.replace?.('px', '')?.replace?.('%', ''))
+              }
+              
+              if (rightMatch?.[1]) {
+                right = Number(rightMatch?.[1]?.replace?.('px', '')?.replace?.('%', ''))
+              }
+              
             } else {
               left = Number(left)
               top = Number(top)
+              bottom = Number(bottom)
             }
             
             // store mouse position at grabbed time
@@ -502,6 +520,8 @@ var App = (props) => {
             window.MDT.grabbedEl = el
             stateRef.current.grabbedLeft = left
             stateRef.current.grabbedTop = top
+            stateRef.current.grabbedRight = right
+            stateRef.current.grabbedBottom = bottom
             
             const boundingClientRect = el.getBoundingClientRect()
             
@@ -517,6 +537,8 @@ var App = (props) => {
               
               console.log('[McDebug][mousedown] left', left)
               console.log('[McDebug][mousedown] top', top)
+              console.log('[McDebug][mousedown] right', right)
+              console.log('[McDebug][mousedown] bottom', bottom)
               console.log('[McDebug][mousedown] boundingClientRect', boundingClientRect)
               console.log('[McDebug][mousedown] boundingClientRect?.left', boundingClientRect?.left)
               console.log('[McDebug][mousedown] boundingClientRect?.top', boundingClientRect?.top)
@@ -539,10 +561,22 @@ var App = (props) => {
       
       const currentEl = window.MDT.grabbedEl
       
+      
+      const condition = currentEl && 
+        (
+          (typeof stateRef?.current.grabbedLeft === 'number') 
+          || (typeof stateRef?.current.grabbedRight === 'number')
+        ) && 
+        (
+          (typeof stateRef?.current.grabbedTop === 'number')
+          || (typeof stateRef?.current.grabbedBottom === 'number')
+        )
+        
+      // console.log('[McDev][debug] mousemove currentEl', currentEl)
+      // console.log('[McDev][debug] condition', condition)
+      
       if (
-        currentEl && 
-        (typeof stateRef?.current.grabbedLeft === 'number') && 
-        (typeof stateRef?.current.grabbedTop === 'number')
+        condition
       ) {
         
         // get difference between current mouse position and original mouse position
@@ -555,11 +589,15 @@ var App = (props) => {
         
         const left = stateRef.current.grabbedLeft
         const top = stateRef.current.grabbedTop
+        const right = stateRef.current.grabbedRight
+        const bottom = stateRef.current.grabbedBottom
         
         // create new left and new top accounting for new mouse position and original mouse offset from origin
         
         const newLeft = left + x
         const newTop = top + y
+        const newRight = right - x
+        const newBottom = top - y
         
         const debug = true
         
@@ -574,16 +612,37 @@ var App = (props) => {
           console.log('[McDebug][onMouseMove] top', top)
           console.log('[McDebug][onMouseMove] newLeft', newLeft)
           console.log('[McDebug][onMouseMove] newTop', newTop)
+          console.log('[McDebug][onMouseMove] newRight', newRight)
+          console.log('[McDebug][onMouseMove] newBottom', newBottom)
         }
         
         
         // set new left and top
         
-        currentEl.style.left = newLeft + 'px'
-        currentEl.style.top = newTop + 'px'
+        // only set values that the element has as classes
+        
+        const className = currentEl?.className
+        
+        if (className?.includes?.(' left-') || className?.startsWith('left-')) {
+          currentEl.style.left = newLeft + 'px'
+        }
+        
+        if (className?.includes?.(' right-') || className?.startsWith('right-')) {
+          currentEl.style.right = newRight + 'px'
+        }
+        
+        if (className?.includes?.(' top-') || className?.startsWith('top-')) {
+          currentEl.style.top = newTop + 'px'
+        }
+          
+        if (className?.includes?.(' bottom-') || className?.startsWith('bottom-')) {
+          currentEl.style.bottom = newBottom + 'px'
+        }
         
         stateRef.current.currentGrabbedLeft = newLeft
         stateRef.current.currentGrabbedTop = newTop
+        stateRef.current.currentGrabbedRight = newRight
+        stateRef.current.currentGrabbedBottom = newBottom
                         
       }
       
@@ -591,18 +650,37 @@ var App = (props) => {
     
     const onMouseUp = (e) => {
       
-      const el = window.MDT.grabbedEl
+      const currentEl = window.MDT.grabbedEl
       
-      if (el) {
-        const newTop = Number(el?.style?.top?.replace?.('px', '')?.replace?.('%', ''))
-        const newLeft = Number(el?.style?.left?.replace?.('px', '')?.replace?.('%', ''))
+      if (currentEl) {
+        const newTop = Number(currentEl?.style?.top?.replace?.('px', '')?.replace?.('%', ''))
+        const newLeft = Number(currentEl?.style?.left?.replace?.('px', '')?.replace?.('%', ''))
+        const newBottom = Number(currentEl?.style?.bottom?.replace?.('px', '')?.replace?.('%', ''))
+        const newRight = Number(currentEl?.style?.right?.replace?.('px', '')?.replace?.('%', ''))
         
-        const string = stateRef?.current?.tailwindStyling ? `top-[${newTop}px] left-[${newLeft}px]`
-          : `
-            top: "${newTop}px",
-            left: "${newLeft}px",
-          `
+        let string = ""
+        
+        const className = currentEl?.className
+        
+        const tw = stateRef?.current?.tailwindStyling
+        
+        if (className?.includes?.(' left-') || className?.startsWith('left-')) {
+          string += tw ? `left-[${newLeft}px] ` : `left: "${newLeft}px",`
+        }
+        
+        if (className?.includes?.(' right-') || className?.startsWith('right-')) {
+          string += tw ? `right-[${newRight}px] ` : `right: "${newRight}px",`
+        }
+        
+        if (className?.includes?.(' top-') || className?.startsWith('top-')) {
+          string += tw ? `top-[${newTop}px] ` : `top: "${newTop}px",`
+        }
           
+        if (className?.includes?.(' bottom-') || className?.startsWith('bottom-')) {
+          string += tw ? `bottom-[${newBottom}px] ` : `bottom: "${newBottom}px",`
+        }
+
+                  
         try {
           navigator.clipboard.writeText(string)
           set('copiedText', string)
