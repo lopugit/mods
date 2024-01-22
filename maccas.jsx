@@ -465,15 +465,25 @@ var App = (props) => {
     'iframeScale'
   ]
   
-  const pageTitle = React.useMemo(() => {
-    const title = document.title?.replace('Maccas DMB - ', '')
-    return title
-  }, [])
+  const [pageTitle, setPageTitle] = React.useState(document.title)
+  const pageTitleRef = React.useRef(pageTitle)
+  const [splitChar, setSplitChar] = React.useState('/')
   
   // poll to add adjustment to elements with class .mdt-position
   React.useEffect(() => {
     
     const interval = setInterval(() => {
+        
+      const title = document.title?.replace('McDev - ', '')?.replace('Maccas DMB - ', '')
+      if (title !== pageTitleRef?.current) {
+        if (title?.includes?.('/')) {
+          setSplitChar('/')
+        } else if (title?.includes?.('-')) {
+          setSplitChar('-')
+        }
+        pageTitleRef.current = title
+        setPageTitle(title)
+      }
       
       const all = document.querySelectorAll('.mdt-position')
       
@@ -749,6 +759,25 @@ var App = (props) => {
   console.log('[McDev] Setting up MDTsubscriber', window?.MDTsubscriber)
   window?.MDTsubscriber?.(true)
   
+  const [mdtPositionEls, setMdtPositionEls] = React.useState([])
+  const mdtPositionElsRef = React.useRef(mdtPositionEls)
+  
+  React.useEffect(() => {
+    
+    const interval = setInterval(() => {
+      const mdtPositionEls = document.querySelectorAll('.mdt-position')
+      if (mdtPositionEls?.length !== mdtPositionElsRef?.current?.length) {
+        setMdtPositionEls(mdtPositionEls)
+        mdtPositionElsRef.current = mdtPositionEls
+      }
+    }, 1000)
+    
+    return () => clearInterval(interval)
+    
+  }, [])
+  
+  console.log('[McDev] mdtPositionEls', mdtPositionEls)
+  
   // template
   return (
     <>
@@ -764,8 +793,14 @@ var App = (props) => {
           '.no-cursor': {
             pointerEvents: 'none'
           },
+          '*': {
+            ...(mdtPositionEls?.length && {
+              pointerEvents: 'none'
+            })
+          },
           '.mdt-position': {
             // grab cursor
+            pointerEvents: 'all !important',
             userSelect: 'none',
             cursor: 'grab',
             "*" : {
@@ -860,11 +895,11 @@ var App = (props) => {
               🍔
             </Box>
             <Flex alignItems="center" fontSize="36px" pb={8}>
-              {pageTitle?.split('/')?.[0]}
+              {pageTitle?.split(splitChar)?.[0]}
               <Box px={12} fontSize={24} mt={-2}>
                 🍟
               </Box>
-              {pageTitle?.split('/')?.[1]}
+              {pageTitle?.split(splitChar)?.[1]}
             </Flex>
           </Flex>
           
@@ -1254,7 +1289,8 @@ var App = (props) => {
               
               <Box 
                 onClick={() => {
-                  set('iframeScale', state?.iframeScale - lowerStep)
+                  const currentScale = typeof state?.iframeScale === 'number' ? state?.iframeScale : 0.25
+                  set('iframeScale', currentScale - lowerStep)
                 }} 
                 fontSize={12} 
                 p={6} 
@@ -1264,7 +1300,8 @@ var App = (props) => {
               </Box>
               <Box 
                 onClick={() => {
-                  set('iframeScale', state?.iframeScale + lowerStep)
+                  const currentScale = typeof state?.iframeScale === 'number' ? state?.iframeScale : 0.25
+                  set('iframeScale', currentScale + lowerStep)
                 }} 
                 fontSize={20} 
                 p={6}
