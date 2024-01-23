@@ -1405,6 +1405,7 @@ var App = (props) => {
             
             {/* Flip between __orientation = 'horizontal' and 'vertical' */}
             <Box
+              ml={24}
               mr={32}
               transform={`rotate(${state?.__orientation === 'horizontal' ? 90 : 0}deg)`}
               onClick={() => {
