@@ -723,8 +723,9 @@ var App = (props) => {
 
                   
         try {
-          navigator.clipboard.writeText(string)
-          set('copiedText', string)
+          const trimmed = string?.trim()
+          navigator.clipboard.writeText(trimmed)
+          set('copiedText', trimmed)
           set('copied', true)
           
           setTimeout(() => {
@@ -785,7 +786,9 @@ var App = (props) => {
         styles={{
           '.figma-preview': {
             opacity: (state?.figmaPreview == 0 || state?.figmaPreview) ? state?.figmaPreview : 1,
-            zIndex: state?.figmaTop ? 999999 : 0,
+            pointerEvents: 'none !important',
+            zIndex: 20
+            // zIndex: state?.figmaTop ? 999999 : 0,
           },
           '.content-preview': {
             opacity: (state?.contentPreview == 0 || state?.contentPreview) ? state?.contentPreview : 1,
@@ -793,7 +796,7 @@ var App = (props) => {
           '.no-cursor': {
             pointerEvents: 'none'
           },
-          '*': {
+          '#root *': {
             ...(mdtPositionEls?.length && {
               pointerEvents: 'none'
             })
