@@ -154,6 +154,12 @@ var App = (props) => {
       
     })
     
+    try {
+      window?.MDTsubscriber?.(Math.random())
+    } catch (err) {
+      console.error('[McDev] Error calling MDTsubscriber', err)
+    }
+    
   }
   
   const oldStateStringRef = React.useRef(stateString)
@@ -218,6 +224,10 @@ var App = (props) => {
   } catch (err) {
     console.error('[McDev] Error setting window.MDT.set', err)
   }
+  
+  const wheres = ['FrontCounter', 'DriveThru', 'Dining', 'Pylon']
+  
+  const whens = ['Breakfast', 'MTea', 'Lunch', 'ATea', 'Dinner', 'LateNight', 'Overnight']
   
   const scale = React.useMemo(() => state?.scale || 1, [state])
   
@@ -756,14 +766,15 @@ var App = (props) => {
     
   }, [])
   
-  // set up MDTsubscriber
-  console.log('[McDev] Setting up MDTsubscriber', window?.MDTsubscriber)
-  window?.MDTsubscriber?.(true)
   
   const [mdtPositionEls, setMdtPositionEls] = React.useState([])
   const mdtPositionElsRef = React.useRef(mdtPositionEls)
   
   React.useEffect(() => {
+    
+    // set up MDTsubscriber
+    console.log('[McDev] Setting up MDTsubscriber', window?.MDTsubscriber)
+    window?.MDTsubscriber?.(Math.random())
     
     const interval = setInterval(() => {
       const mdtPositionEls = document.querySelectorAll('.mdt-position')
@@ -800,6 +811,9 @@ var App = (props) => {
             ...(mdtPositionEls?.length && {
               pointerEvents: 'none'
             })
+          },
+          '#root .mdt-child *': {
+            pointerEvents: 'all !important'
           },
           '.mdt-position': {
             // grab cursor
@@ -1248,13 +1262,11 @@ var App = (props) => {
             marginTop="12" 
             flexDir="row"
             alignItems="center"
-            gap={6} 
             cursor="pointer"
             display={state?.open ? 'flex' : 'none'}
             sx={{
               "> *": {
                 userSelect: 'none',
-                px: 16
               },
               "* select::-ms-expand": {
                 display: "none"
@@ -1262,16 +1274,59 @@ var App = (props) => {
             }}
           >
             
+            {/* Where Selection Dropdown */}
+            <Box
+              // lower gap for these
+              mr={16}
+            >
+              <select 
+                style={{
+                  outline: "none !important",
+                  border: "none !important",
+                  borderRadius: "8px",
+                  color: "black",
+                  padding: "6px"
+                }}
+                onChange={(e) => {
+                  const newVal = e.target.value
+                  set(['where', '__where'], newVal)
+                }} 
+                value={state?.where}
+              >
+                {wheres.map((val) => {
+                  return <option key={val}>{val}</option>
+                })}
+              </select>
+            </Box>            
+              
+            {/* When Selection Dropdown */}
+            <Box
+              mr={16}
+            >
+              <select 
+                style={{
+                  outline: "none !important",
+                  border: "none !important",
+                  borderRadius: "8px",
+                  color: "black",
+                  padding: "6px"
+                }}
+                onChange={(e) => {
+                  const newVal = e.target.value
+                  set(['when', '__when'], newVal)
+                }} 
+                value={state?.when}
+              >
+                {whens.map((val) => {
+                  return <option key={val}>{val}</option>
+                })}
+              </select>
+            </Box>            
+
             {/* Screen Selection Dropdown */}
             <Box
-              // transform={`rotate(${state?.__orientation === 'horizontal' ? 90 : 0}deg)`}
-              // onClick={() => {
-              //   const curOrientation = state?.__orientation
-              //   const newOrientation = curOrientation === 'horizontal' ? 'vertical' : 'horizontal'
-              //   set('__orientation', newOrientation)
-              // }}
+              mr={16}
             >
-              
               <select
                 style={{
                   outline: "none !important",
@@ -1313,7 +1368,6 @@ var App = (props) => {
                 }
               }>
                 {/* Flatten allPreviews into options of number of screens + screen # for that bank */}
-                
                 {allPreviews?.map(nScreens => {
                     
                     const screenCount = nScreens?.[0]?.__no_of_screens
@@ -1344,15 +1398,14 @@ var App = (props) => {
                         
                       })}
                     </optgroup>
-                    
                   }
                 )}
-                
               </select>
             </Box>            
             
             {/* Flip between __orientation = 'horizontal' and 'vertical' */}
             <Box
+              mr={32}
               transform={`rotate(${state?.__orientation === 'horizontal' ? 90 : 0}deg)`}
               onClick={() => {
                 const curOrientation = state?.__orientation
@@ -1364,6 +1417,7 @@ var App = (props) => {
             </Box>            
 
             <Box
+              mr={32}
               opacity={state?.__inspiration ? 1 : 0.45}
               onClick={() => {
                 set('__inspiration', !state?.__inspiration)
@@ -1373,6 +1427,7 @@ var App = (props) => {
             </Box>            
             
             <Box
+              mr={32}
               opacity={state?.tailwindStyling ? 1 : 0.45}
               onClick={() => {
                 set('tailwindStyling', !state?.tailwindStyling)
@@ -1385,8 +1440,7 @@ var App = (props) => {
 
             
             <Box
-            
-            
+              mr={32}
               onClick={() => {
                 set('dt_mode', !state?.dt_mode)
               }}
@@ -1395,8 +1449,9 @@ var App = (props) => {
               🚘
             </Box>
             
-            <Center>
-              
+            <Center
+              mr={32}
+            >
               <Box 
                 onClick={() => {
                   const currentScale = typeof state?.iframeScale === 'number' ? state?.iframeScale : 0.25
@@ -1418,10 +1473,11 @@ var App = (props) => {
               >
                 🍟
               </Box>
-              
             </Center>
             
-            <Box>
+            <Box
+              mr={32}
+            >
               <Box opacity={state?.figmaPreview ? 1 : 0.45} onClick={() => {
                 set('figmaPreview', state?.figmaPreview ? 0 : 0.5 )
               }}>
@@ -1429,7 +1485,9 @@ var App = (props) => {
               </Box>
             </Box>
             
-            <Box>
+            <Box
+              mr={32}
+            >
               <Box opacity={!state?.hideIframes ? 1 : 0.45} onClick={() => {
                 if (state?.killIframes) {
                   set(['hideIframes', 'killIframes'], [!state?.hideIframes, !state?.hideIframes])
@@ -1441,7 +1499,9 @@ var App = (props) => {
               </Box>
             </Box>
             
-            <Box>
+            <Box
+              mr={32}
+            >
               <Box opacity={!state?.killIframes ? 1 : 0.45} onClick={() => {
                 set(['hideIframes', 'killIframes'], !state?.killIframes)
               }}>
@@ -1449,7 +1509,9 @@ var App = (props) => {
               </Box>
             </Box>
             
-            <Box>
+            <Box
+              mr={32}
+            >
               <Box opacity={!state?.hideData ? 1 : 0.45} onClick={() => {
                 set('hideData', !state?.hideData)
               }}>
@@ -1457,16 +1519,13 @@ var App = (props) => {
               </Box>
             </Box>
             
-            <Flex 
-              gap={8}
-              ml={12}
-            >
+            <Flex>
               <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" ml="auto" onClick={decreaseScale}>
                 <Box mt={3} fontSize="28px">
                   -
                 </Box>
               </Box>
-              <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" onClick={increaseScale}>
+              <Box ml={16} py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" onClick={increaseScale}>
                 <Box mt={3} fontSize="28px">
                   +
                 </Box>
