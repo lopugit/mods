@@ -790,6 +790,32 @@ var App = (props) => {
   
   console.log('[McDev] mdtPositionEls', mdtPositionEls)
   
+  const exportScreens = async () => {
+    
+    const el = document.getElementsByClassName('show-all-whens')?.[0]
+    
+    console.log('nik el', el)
+    
+    if (el) {
+      
+      document.body.style.zoom = "100%"
+      window.Image = window?.ImageOG
+      
+      const width = state?.__orientation === 'horizontal' ? 1920 : 1080
+      
+      const png = await domtoimage.toPng(el, {
+        width
+      })
+      
+      const link = document.createElement('a')
+      link.download = `maccas-dmb-${state?.__where}-${state?.__orientation}-${Date.now()}.png`
+      link.href = png
+      link.click()
+    }
+    
+    
+  }
+  
   // template
   return (
     <>
@@ -808,7 +834,7 @@ var App = (props) => {
             pointerEvents: 'none'
           },
           '#root *': {
-            ...(mdtPositionEls?.length && {
+            ...((state?.mdtPosition && mdtPositionEls?.length) && {
               pointerEvents: 'none'
             })
           },
@@ -816,13 +842,15 @@ var App = (props) => {
             pointerEvents: 'all !important'
           },
           '.mdt-position': {
-            // grab cursor
-            pointerEvents: 'all !important',
-            userSelect: 'none',
-            cursor: 'grab',
-            "*" : {
+            ...(state?.mdtPosition && {
+              // grab cursor
+              pointerEvents: 'all !important',
               userSelect: 'none',
-            }
+              cursor: 'grab',
+              "*" : {
+                userSelect: 'none',
+              }
+            })
           }
         }}
       >
@@ -882,8 +910,14 @@ var App = (props) => {
           position="fixed"
           display="flex"
           flexDir="column"
-          bottom="5%"
-          right="5%"
+          
+          className="mdt-self-position"
+        
+          style={{
+            bottom: (typeof state?.windowTop === 'number' ? state?.windowTop : 5) + "%",
+            right: (typeof state?.windowRight === 'number' ? state?.windowRight : 5) + "%"
+          }}
+          
           width={
             state?.hideIframes && state?.hideData ? "auto" :
               state?.open ? state?.fixedWidth : "auto"
@@ -903,7 +937,9 @@ var App = (props) => {
           )}
           
 
-          <Box cursor="pointer" onClick={() => set('open', !state?.open)} position="absolute" top={-22} right={22} maxWidth="48px">
+          <Box 
+            cursor="pointer" onClick={() => set('open', !state?.open)} position="absolute" top={-22} right={22} maxWidth="48px"
+          >
             <img lazy src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png">
             </img>
           </Box>
@@ -1403,9 +1439,31 @@ var App = (props) => {
               </select>
             </Box>            
             
-            {/* Flip between __orientation = 'horizontal' and 'vertical' */}
+            {/* Toggle showing of all when's */}
             <Box
               ml={24}
+              mr={32}
+              opacity={state?.showAllWhens ? 1 : 0.45}
+              onClick={() => {
+                set('showAllWhens', !state?.showAllWhens)
+              }}
+            >
+              ⏰
+            </Box>      
+            
+            {/* Toggle drag and drop position */}
+            <Box
+              mr={32}
+              opacity={state?.mdtPosition ? 1 : 0.45}
+              onClick={() => {
+                set('mdtPosition', !state?.mdtPosition)
+              }}
+            >
+              ✊
+            </Box>      
+                  
+            {/* Flip between __orientation = 'horizontal' and 'vertical' */}
+            <Box
               mr={32}
               transform={`rotate(${state?.__orientation === 'horizontal' ? 90 : 0}deg)`}
               onClick={() => {
@@ -1415,6 +1473,26 @@ var App = (props) => {
               }}
             >
               📱
+            </Box>            
+
+            <Box
+              mr={32}
+              opacity={state?.__shoppable ? 1 : 0.45}
+              onClick={() => {
+                set('__shoppable', !state?.__shoppable)
+              }}
+            >
+              👩‍🌾
+            </Box>            
+            
+            <Box
+              mr={32}
+              opacity={state?.__foodcourt ? 1 : 0.45}
+              onClick={() => {
+                set('__foodcourt', !state?.__foodcourt)
+              }}
+            >
+              🍽️
             </Box>            
 
             <Box
@@ -1517,6 +1595,20 @@ var App = (props) => {
                 set('hideData', !state?.hideData)
               }}>
                 ✏️
+              </Box>
+            </Box>
+            
+            <Box
+              mr={32}
+            >
+              <Box 
+                // opacity={!state?.hideData ? 1 : 0.45} 
+                onClick={() => {
+                  exportScreens()
+                  // set('hideData', !state?.hideData)
+                }}
+              >
+                📷
               </Box>
             </Box>
             

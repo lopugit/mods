@@ -113,6 +113,9 @@ if (prod) {
           import * as ChakraUI from 'https://esm.sh/@chakra-ui/react@2.7.1';
           window.ChakraUI = ChakraUI
           
+          import domtoimage from 'https://esm.sh/dom-to-image';
+          window.domtoimage = domtoimage
+          
         ` }, "module", "ChakraUI")
         
         await loadScript(MDT.baseUrl+"maccas.jsx", "text/jsx", true)
