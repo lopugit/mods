@@ -62,7 +62,7 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
     stateInitialised = true
     
     const params = new URLSearchParams(location.search)
-    const newState = forceState ? {...forceState, mdt: true } : { mdt: true }
+    const newState = forceState ? {...forceState, mc: true } : { mc: true }
     
     
     for (let [key, value] of params) {
@@ -102,18 +102,14 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
     
     
     return newState
-    
-    // setState((state) => {
-    //   return { ...state, ...newState }
-    // }, 4)
-    
+        
   } catch (err) {
     console.error('Error initialising state from params', err)
   }
   
 }
 
-console.log('[McDev] Loaded React App')
+console.log('[MoCal] Loaded React App')
 
 var App = (props) => {
   
@@ -134,10 +130,6 @@ var App = (props) => {
   
   const [state, setStateAux] = React.useState(initialiseStateFromParams(stateString ? {
     ...cachedState,
-    fixedWidth: cachedState?.fixedWidth || "600px",
-    fixedHeight: cachedState?.fixedHeight || "600px",
-    varsMaxH: cachedState?.varsMaxH || "30vh",
-    previewsMaxH: cachedState?.previewsMaxH || "35vh",
   } : {}, location))
   
   const stateRef = React.useRef(state)
@@ -147,7 +139,7 @@ var App = (props) => {
     setStateAux((state) => {
       
       const realNewState = typeof newState === 'function' ? newState(state) : newState
-      console.log(`[McDev]${uid ? `[${uid}]` : ``} Updating state to`, realNewState)
+      console.log(`[MoCal]${uid ? `[${uid}]` : ``} Updating state to`, realNewState)
       stateRef.current = realNewState
       
       return realNewState
@@ -155,9 +147,9 @@ var App = (props) => {
     })
     
     try {
-      window?.MDTsubscriber?.(Math.random())
+      window?.MCsubscriber?.(Math.random())
     } catch (err) {
-      console.error('[McDev] Error calling MDTsubscriber', err)
+      console.error('[MoCal] Error calling MCsubscriber', err)
     }
     
   }
@@ -172,7 +164,7 @@ var App = (props) => {
         const stateString = window.localStorage.getItem('maccas-dev-tools')
         
         if (stateString !== oldStateStringRef?.current) {
-          console.log('[McDev] Updating state from localStorage')
+          console.log('[MoCal] Updating state from localStorage')
           oldStateStringRef.current = stateString
           try {
             const newState = initialiseStateFromParams(JSON.parse(stateString), location, true)
@@ -191,7 +183,7 @@ var App = (props) => {
     
   const set = (key, value, uid) => {
     
-    console.log(`[McDev]${uid ? `[${uid}]` : ``}`, 'Set', `"${key}"`, 'to', `"${value}"`)
+    console.log(`[MoCal]${uid ? `[${uid}]` : ``}`, 'Set', `"${key}"`, 'to', `"${value}"`)
     
     if (typeof key === 'object') {
       
@@ -219,10 +211,10 @@ var App = (props) => {
   }
   
   try {
-    window.MDT.set = set
-    window.MDT.state = state
+    window.MC.set = set
+    window.MC.state = state
   } catch (err) {
-    console.error('[McDev] Error setting window.MDT.set', err)
+    console.error('[MoCal] Error setting window.MC.set', err)
   }
   
   const wheres = ['FrontCounter', 'DriveThru', 'Dining', 'Pylon']
@@ -249,10 +241,8 @@ var App = (props) => {
   const updateStateFromParams = (forceState) => {
     const params = new URLSearchParams(location.search)
     const newState = forceState ? {...forceState} : {}
-    const paramsObj = {}
+    
     for (let [key, value] of params) {
-      
-      paramsObj[key] = value
       
       // check if value contains any latin characters
       // if so don't cast to number
@@ -273,24 +263,12 @@ var App = (props) => {
       
     }
     
-    console.log('[McDev][updateStateFromParams][paramsObj]', paramsObj)
-    console.log('[McDev][updateStateFromParams][newState]', newState)
-    
     setState((state) => {
       return { ...state, ...newState }
     }, 4)
   }
     
   const [oldSearch, setOldSearch] = React.useState(location.search)
-  
-  React.useEffect(() => {
-    
-    // update once at start
-    if (!state?.iframeMode) {
-      updateStateFromParams()
-    }
-    
-  }, [])
   
   React.useEffect(() => {
     if (location.search !== oldSearch) {
@@ -312,7 +290,7 @@ var App = (props) => {
   const paramWhitelist = [
     'debug',
     'iframeMode',
-    'mdt',
+    'mc',
     'figmaPreview',
     'scale',
     'dt_mode'
@@ -353,7 +331,7 @@ var App = (props) => {
       window.localStorage.setItem('maccas-dev-tools', stringifiedState)
     }
     
-    window.MDT.state = state
+    window.MC.state = state
     
     // update query params when state changes
     
@@ -452,7 +430,7 @@ var App = (props) => {
       __screen_no: i,
       __orientation: orientation,
       iframeMode: true,
-      mdt: true
+      mc: true
     }, true)
     
     const uid = `iframe${screenCount}${orientation}${i}`
@@ -493,12 +471,12 @@ var App = (props) => {
   const pageTitleRef = React.useRef(pageTitle)
   const [splitChar, setSplitChar] = React.useState('/')
   
-  // poll to add adjustment to elements with class .mdt-position
+  // poll to add adjustment to elements with class .mc-position
   React.useEffect(() => {
     
     const interval = setInterval(() => {
         
-      const title = document.title?.replace('McDev - ', '')?.replace('Maccas DMB - ', '')
+      const title = document.title?.replace('MoCal - ', '')?.replace('Maccas DMB - ', '')
       if (title !== pageTitleRef?.current) {
         if (title?.includes?.('/')) {
           setSplitChar('/')
@@ -509,15 +487,15 @@ var App = (props) => {
         setPageTitle(title)
       }
       
-      const all = document.querySelectorAll('.mdt-position')
+      const all = document.querySelectorAll('.mc-position')
       
       all?.forEach((el) => {
       
         // if el doesn't have a click event listener
         // add one that allows dragging the position via changing style.left and style.top
-        if (!el?.__mdt) {
+        if (!el?.__mc) {
           
-          el.__mdt = true
+          el.__mc = true
           
           
           // on click set grabbedEl to this element
@@ -582,7 +560,7 @@ var App = (props) => {
             stateRef.current.grabbedMouseX = e.clientX
             stateRef.current.grabbedMouseY = e.clientY
             
-            window.MDT.grabbedEl = el
+            window.MC.grabbedEl = el
             stateRef.current.grabbedLeft = left
             stateRef.current.grabbedTop = top
             stateRef.current.grabbedRight = right
@@ -624,7 +602,7 @@ var App = (props) => {
     
     const onMouseMove = (e) => {
       
-      const currentEl = window.MDT.grabbedEl
+      const currentEl = window.MC.grabbedEl
       
       
       const condition = currentEl && 
@@ -637,8 +615,8 @@ var App = (props) => {
           || (typeof stateRef?.current.grabbedBottom === 'number')
         )
         
-      // console.log('[McDev][debug] mousemove currentEl', currentEl)
-      // console.log('[McDev][debug] condition', condition)
+      // console.log('[MoCal][debug] mousemove currentEl', currentEl)
+      // console.log('[MoCal][debug] condition', condition)
       
       if (
         condition
@@ -715,7 +693,7 @@ var App = (props) => {
     
     const onMouseUp = (e) => {
       
-      const currentEl = window.MDT.grabbedEl
+      const currentEl = window.MC.grabbedEl
       
       if (currentEl) {
         const newTop = Number(currentEl?.style?.top?.replace?.('px', '')?.replace?.('%', ''))
@@ -764,7 +742,7 @@ var App = (props) => {
         }
       }
       
-      window.MDT.grabbedEl = null
+      window.MC.grabbedEl = null
       stateRef.current.grabbedLeft = null
       stateRef.current.grabbedTop = null
     }
@@ -781,20 +759,20 @@ var App = (props) => {
   }, [])
   
   
-  const [mdtPositionEls, setMdtPositionEls] = React.useState([])
-  const mdtPositionElsRef = React.useRef(mdtPositionEls)
+  const [mcPositionEls, setMCPositionEls] = React.useState([])
+  const mcPositionElsRef = React.useRef(mcPositionEls)
   
   React.useEffect(() => {
     
-    // set up MDTsubscriber
-    console.log('[McDev] Setting up MDTsubscriber', window?.MDTsubscriber)
-    window?.MDTsubscriber?.(Math.random())
+    // set up MCsubscriber
+    console.log('[MoCal] Setting up MCsubscriber', window?.MCsubscriber)
+    window?.MCsubscriber?.(Math.random())
     
     const interval = setInterval(() => {
-      const mdtPositionEls = document.querySelectorAll('.mdt-position')
-      if (mdtPositionEls?.length !== mdtPositionElsRef?.current?.length) {
-        setMdtPositionEls(mdtPositionEls)
-        mdtPositionElsRef.current = mdtPositionEls
+      const mcPositionEls = document.querySelectorAll('.mc-position')
+      if (mcPositionEls?.length !== mcPositionElsRef?.current?.length) {
+        setMCPositionEls(mcPositionEls)
+        mcPositionElsRef.current = mcPositionEls
       }
     }, 1000)
     
@@ -802,24 +780,21 @@ var App = (props) => {
     
   }, [])
   
-  console.log('[McDev] mdtPositionEls', mdtPositionEls)
+  console.log('[MoCal] mcPositionEls', mcPositionEls)
   
   const [imgLoading, setImgLoading] = React.useState(false)
   
-  const exportScreens = async (id = "show-all-whens") => {
+  const exportScreens = async () => {
     
-    const el = document.getElementsByClassName(id)?.[0]
+    const el = document.getElementsByClassName('show-all-whens')?.[0]
+    
     
     if (el) {
       
       document.body.style.zoom = "100%"
       window.Image = window?.ImageOG
       
-      let width = state?.__orientation === 'horizontal' ? 1920 : 1080
-      
-      if (id === 'selfie') {
-        width = el?.scrollWidth
-      }
+      const width = state?.__orientation === 'horizontal' ? 1920 : 1080
       
       setImgLoading(true)
       
@@ -861,15 +836,15 @@ var App = (props) => {
             pointerEvents: 'none'
           },
           '#root *': {
-            ...((state?.mdtPosition && mdtPositionEls?.length) && {
+            ...((state?.mcPosition && mcPositionEls?.length) && {
               pointerEvents: 'none'
             })
           },
-          '#root .mdt-child *': {
+          '#root .mc-child *': {
             pointerEvents: 'all !important'
           },
-          '.mdt-position': {
-            ...(state?.mdtPosition && {
+          '.mc-position': {
+            ...(state?.mcPosition && {
               // grab cursor
               pointerEvents: 'all !important',
               userSelect: 'none',
@@ -938,17 +913,17 @@ var App = (props) => {
           display="flex"
           flexDir="column"
           
-          className="mdt-self-position"
+          className="mc-self-position"
         
           style={{
             bottom: (typeof state?.windowTop === 'number' ? state?.windowTop : 5) + "%",
             right: (typeof state?.windowRight === 'number' ? state?.windowRight : 5) + "%"
           }}
           
-          // width={
-          //   state?.hideIframes && state?.hideData ? "auto" :
-          //     state?.open ? state?.fixedWidth : "auto"
-          // }
+          width={
+            state?.hideIframes && state?.hideData ? "auto" :
+              state?.open ? state?.fixedWidth : "auto"
+          }
           padding={16}
           color="white"
           maxH="84vh"
@@ -972,7 +947,7 @@ var App = (props) => {
           </Box>
           <Flex alignItems="center" flexDir="row" display={state?.open ? 'flex' : 'none'}>
             <Box fontSize="36px" pb={8} >
-              McDev
+              MoCal
             </Box>
             <Box fontSize={24} px={18} mt={-5}>
               🍔
@@ -983,24 +958,6 @@ var App = (props) => {
                 🍟
               </Box>
               {pageTitle?.split(splitChar)?.[1]}
-            </Flex>
-            <Flex alignItems="center" fontSize="36px" pb={8}>
-              {state?.__inspiration && (
-                <>
-                  <Box px={12} fontSize={24} mt={-2}>
-                    👨‍🎨
-                  </Box>
-                  Inspiration
-                </>
-              )}              
-              {state?.__foodcourt && (
-                <>
-                  <Box px={12} fontSize={24} mt={-2}>
-                    🍽️
-                  </Box>
-                  Foodcourt
-                </>
-              )}              
             </Flex>
           </Flex>
           
@@ -1029,7 +986,7 @@ var App = (props) => {
                   
                   const val = e.target.value
                   
-                  console.log('[McDev] Setting key', key)
+                  console.log('[MoCal] Setting key', key)
                   
                   if (val == Number(val)) {
                     if (val?.[val?.length-1] === ".") {
@@ -1123,7 +1080,6 @@ var App = (props) => {
             <Box 
               maxH={state?.previewsMaxH} 
               overflowY="scroll" 
-              className="selfie"
               display={
                 (state?.open && !state?.hideIframes) ? 'block' : 'none'
               }
@@ -1135,19 +1091,16 @@ var App = (props) => {
                 const uid = `show${screenCount}`
                 
                 return <Box key={uid} my={32}>
-                  <Text 
-                    display={state?.screenshotMode ? 'none' : 'block'}
-                    cursor="pointer" fontSize="32px" onClick={() => {
-                      
-                      if (!state?.[uid]) {
-                        set([uid, uid+'disp'], true)
-                      } else {
-                        set(uid+'disp', !state?.[uid+'disp'])
-                      }
-                      
-                  
-                    }}
-                  >
+                  <Text cursor="pointer" fontSize="32px" onClick={() => {
+                    
+                    if (!state?.[uid]) {
+                      set([uid, uid+'disp'], true)
+                    } else {
+                      set(uid+'disp', !state?.[uid+'disp'])
+                    }
+                    
+                
+                  }}>
                     {(screenCount)} Screens
                   </Text>
                   {state?.[uid] && nScreens.map((bank) => {
@@ -1165,7 +1118,6 @@ var App = (props) => {
                     return <Box key={uid2} display={state?.[uid+'disp'] ? 'block' : 'none'} my={24}>
                       <Flex cursor="pointer" flexDir="row" alignItems="center">
                         <Text 
-                          display={(state?.screenshotMode && !state?.[uid2+'disp']) ? 'none' : 'block'}
                           onClick={() => {
                             
                             
@@ -1195,7 +1147,6 @@ var App = (props) => {
                           const i = fakei + 1
                           
                           return <Box 
-                            display={(state?.screenshotMode && !state?.[uid2+'disp']) ? 'none' : 'block'}
                             mt={-5} 
                             ml={2} 
                             width={(width / 100) + "px"} 
@@ -1258,15 +1209,12 @@ var App = (props) => {
                                         bg="white"
                                       >
                                         <Flex position="absolute" top="0" left="0" width="100%" height="100%" alignItems="center" justifyContent="center" >
-                                          <img width="160px" src={window?.MDT?.baseUrl + "McLoading4.gif"}></img>
+                                          <img width="160px" src={window?.MC?.baseUrl + "McLoading4.gif"}></img>
                                         </Flex>
                                         {getCachedIframe(screenCount, orientation, i, width, height)}
                                       </Box>
                                     </Flex>
-                                    <Flex 
-                                      display={state?.screenshotMode ? 'none' : 'flex'}
-                                      flexDir="row" gap={8} py={10}
-                                    >
+                                    <Flex flexDir="row" gap={8} py={10}>
                                       <Box color="white">
                                         {i}
                                       </Box>
@@ -1504,9 +1452,9 @@ var App = (props) => {
             {/* Toggle drag and drop position */}
             <Box
               mr={32}
-              opacity={state?.mdtPosition ? 1 : 0.45}
+              opacity={state?.mcPosition ? 1 : 0.45}
               onClick={() => {
-                set('mdtPosition', !state?.mdtPosition)
+                set('mcPosition', !state?.mcPosition)
               }}
             >
               ✊
@@ -1645,33 +1593,6 @@ var App = (props) => {
                 set('hideData', !state?.hideData)
               }}>
                 ✏️
-              </Box>
-            </Box>
-            
-            <Box
-              mr={32}
-            >
-              <Box 
-                opacity={!state?.screenshotMode ? 1 : 0.45} 
-                onClick={() => {
-                  set('screenshotMode', !state?.screenshotMode)
-                }}
-              >
-                🎥
-              </Box>
-            </Box>
-            
-            <Box
-              mr={32}
-            >
-              <Box 
-                // opacity={!state?.hideData ? 1 : 0.45} 
-                onClick={() => {
-                  exportScreens('selfie')
-                  // set('hideData', !state?.hideData)
-                }}
-              >
-                🤳
               </Box>
             </Box>
             
