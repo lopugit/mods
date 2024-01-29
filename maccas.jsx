@@ -972,6 +972,7 @@ var App = (props) => {
           
 
           <Box 
+            title="Open/Close McDev"
             cursor="pointer" onClick={() => set('open', !state?.open)} position="absolute" top={-22} right={22} maxWidth="48px"
           >
             <img lazy src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png">
@@ -1504,6 +1505,7 @@ var App = (props) => {
               onClick={() => {
                 set('showAllWhens', !state?.showAllWhens)
               }}
+              title="Toggle Showing of All Time's for this Location"
             >
               ⏰
             </Box>      
@@ -1515,6 +1517,7 @@ var App = (props) => {
               onClick={() => {
                 set('mdtPosition', !state?.mdtPosition)
               }}
+              title="Toggle Drag and Drop Position"
             >
               ✊
             </Box>      
@@ -1528,26 +1531,18 @@ var App = (props) => {
                 const newOrientation = curOrientation === 'horizontal' ? 'vertical' : 'horizontal'
                 set('__orientation', newOrientation)
               }}
+              title="Toggle Orientation"
             >
               📱
             </Box>            
 
-            {/* <Box
-              mr={32}
-              opacity={state?.__shoppable ? 1 : 0.45}
-              onClick={() => {
-                set('__shoppable', !state?.__shoppable)
-              }}
-            >
-              👩‍🌾
-            </Box>             */}
-            
             <Box
               mr={32}
               opacity={state?.__foodcourt ? 1 : 0.45}
               onClick={() => {
                 set('__foodcourt', !state?.__foodcourt)
               }}
+              title="Toggle Foodcourt Mode"
             >
               🍽️
             </Box>            
@@ -1558,6 +1553,7 @@ var App = (props) => {
               onClick={() => {
                 set('__inspiration', !state?.__inspiration)
               }}
+              title="Toggle Inspiration Mode"
             >
               🙏
             </Box>            
@@ -1568,6 +1564,7 @@ var App = (props) => {
               onClick={() => {
                 set('tailwindStyling', !state?.tailwindStyling)
               }}
+              title="Toggle Tailwind Position Syntax"
             >
               
               🐒💨
@@ -1580,6 +1577,7 @@ var App = (props) => {
               onClick={() => {
                 set('dt_mode', !state?.dt_mode)
               }}
+              title="Toggle Drive Thru Mode (Reverse Order of Screens)"
               opacity={state?.dt_mode ? 1 : 0.45}
             >
               🚘
@@ -1593,6 +1591,7 @@ var App = (props) => {
                   const currentScale = typeof state?.iframeScale === 'number' ? state?.iframeScale : 0.25
                   set('iframeScale', currentScale - lowerStep)
                 }} 
+                title="Decrease Size of iFrames"
                 fontSize={12} 
                 p={6} 
                 mt={1}
@@ -1604,6 +1603,7 @@ var App = (props) => {
                   const currentScale = typeof state?.iframeScale === 'number' ? state?.iframeScale : 0.25
                   set('iframeScale', currentScale + lowerStep)
                 }} 
+                title="Increase Size of iFrames"
                 fontSize={20} 
                 p={6}
               >
@@ -1613,6 +1613,7 @@ var App = (props) => {
             
             <Box
               mr={32}
+              title="Toggle Figma Previews"
             >
               <Box opacity={state?.figmaPreview ? 1 : 0.45} onClick={() => {
                 set('figmaPreview', state?.figmaPreview ? 0 : 0.3 )
@@ -1623,6 +1624,7 @@ var App = (props) => {
             
             <Box
               mr={32}
+              title="Hide All iFrames"
             >
               <Box opacity={!state?.hideIframes ? 1 : 0.45} onClick={() => {
                 if (state?.killIframes) {
@@ -1637,6 +1639,7 @@ var App = (props) => {
             
             <Box
               mr={32}
+              title="Unload/Kill All iFrames"
             >
               <Box opacity={!state?.killIframes ? 1 : 0.45} onClick={() => {
                 set(['hideIframes', 'killIframes'], !state?.killIframes)
@@ -1647,6 +1650,7 @@ var App = (props) => {
             
             <Box
               mr={32}
+              title="Show Debug State"
             >
               <Box opacity={!state?.hideData ? 1 : 0.45} onClick={() => {
                 set('hideData', !state?.hideData)
@@ -1657,6 +1661,7 @@ var App = (props) => {
             
             <Box
               mr={32}
+              title="Enter Screenshot Mode for iFrames"
             >
               <Box 
                 opacity={!state?.screenshotMode ? 1 : 0.45} 
@@ -1670,12 +1675,11 @@ var App = (props) => {
             
             <Box
               mr={32}
+              title="Capture the McDev window as a screenshot"
             >
               <Box 
-                // opacity={!state?.hideData ? 1 : 0.45} 
                 onClick={() => {
                   exportScreens('selfie')
-                  // set('hideData', !state?.hideData)
                 }}
               >
                 🤳
@@ -1684,12 +1688,11 @@ var App = (props) => {
             
             <Box
               mr={32}
+              title="Save Current Screens to PNG"
             >
               <Box 
-                // opacity={!state?.hideData ? 1 : 0.45} 
                 onClick={() => {
                   exportScreens()
-                  // set('hideData', !state?.hideData)
                 }}
               >
                 {imgLoading ? '📸' : '📷'}
@@ -1697,12 +1700,12 @@ var App = (props) => {
             </Box>
             
             <Flex>
-              <Box py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" ml="auto" onClick={decreaseScale}>
+              <Box title="Scale Down McDev" py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" ml="auto" onClick={decreaseScale}>
                 <Box mt={3} fontSize="28px">
                   -
                 </Box>
               </Box>
-              <Box ml={16} py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" onClick={increaseScale}>
+              <Box title="Scale Up McDev" ml={16} py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" onClick={increaseScale}>
                 <Box mt={3} fontSize="28px">
                   +
                 </Box>
