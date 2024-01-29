@@ -832,8 +832,15 @@ var App = (props) => {
         const whereString = state?.__where === 'FrontCounter'
           ? state?.__where + (state?.__foodcourt ? ' -Foodcourt' : '') + (state?.__inspiration ? ' -Inspiration' : '')
           : state?.__where
+        
+        const dayOfWeek = new Date().toLocaleString('en-us', {  weekday: 'long' })
+        
+        // time formatted as "HH:MM"
+        // replace _ with - and remove spaces
+        // in 24 hour time
+        const time = new Date().toLocaleString('en-us', { hour: 'numeric', minute: 'numeric', hour12: false })?.replace(':', '-')?.replace(' ', '-')?.replace('_', '-')
           
-        link.download = `maccas-dmb-${whereString}-${state?.__orientation}-${Date.now()}.png`
+        link.download = `McDev-${time}-${dayOfWeek}-${whereString}-${state?.__orientation}.png`
         link.href = png
         link.click()
       })
