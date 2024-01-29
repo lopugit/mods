@@ -839,8 +839,11 @@ var App = (props) => {
         // replace _ with - and remove spaces
         // in 24 hour time
         const time = new Date().toLocaleString('en-us', { hour: 'numeric', minute: 'numeric', hour12: false })?.replace(':', '-')?.replace(' ', '-')?.replace('_', '-')
+        
+        const random4letters = Math.random().toString(36).substring(2, 6)
           
-        link.download = `McDev-${time}-${dayOfWeek}-${whereString}-${state?.__orientation}.png`
+        
+        link.download = `McDev-${time}-${dayOfWeek}-${whereString}-${state?.__orientation}-${random4letters}.png`
         link.href = png
         link.click()
       })
@@ -1152,9 +1155,10 @@ var App = (props) => {
                       } else {
                         set(uid+'disp', !state?.[uid+'disp'])
                       }
-                      
-                  
                     }}
+                    title={`
+                      Hide or Show Bank of ${screenCount} Screens
+                    `}
                   >
                     {(screenCount)} Screens
                   </Text>
@@ -1187,6 +1191,9 @@ var App = (props) => {
                           mr={5} 
                           fontSize="24px" 
                           textTransform="capitalize"
+                          title={`
+                            Hide or Show ${screenCount} ${orientation} Screens
+                          `}
                         >
                           {/* Horizontal or Vertical */}
                           {screenCount} {orientation}
@@ -1206,6 +1213,7 @@ var App = (props) => {
                             display={(state?.screenshotMode && !state?.[uid2+'disp']) ? 'none' : 'block'}
                             mt={-5} 
                             ml={2} 
+                            title={"Toggle Visibility of Screen " + i}
                             width={(width / 100) + "px"} 
                             height={(height / 100)+'px'} 
                             onClick={
@@ -1297,9 +1305,14 @@ var App = (props) => {
                                               }
                                             }, 6)
                                           }
-                                          
-                                          
                                         }}
+                                        title={
+                                          (
+                                            i === state?.__screen_no
+                                            && orientation === state?.__orientation
+                                            && screenCount === state?.__no_of_screens  
+                                          ) ? "Selected Screen" : "Select Screen"
+                                        }
                                       >
                                         {
                                           (
@@ -1331,7 +1344,8 @@ var App = (props) => {
                                             set('copied', false)
                                           }, 2500)
                                           
-                                        }} 
+                                        }}
+                                        title="Copy Screen URL to Clipboard"
                                       >
                                         📎
                                       </Box>
@@ -1664,7 +1678,7 @@ var App = (props) => {
               title="Enter Screenshot Mode for iFrames"
             >
               <Box 
-                opacity={!state?.screenshotMode ? 1 : 0.45} 
+                opacity={state?.screenshotMode ? 1 : 0.45} 
                 onClick={() => {
                   set('screenshotMode', !state?.screenshotMode)
                 }}
