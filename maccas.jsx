@@ -51,11 +51,15 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
     }
 
     stateInitialised = true
+    
 
     const params = new URLSearchParams(location.search)
     const newState = forceState ? { ...forceState, mdt: true } : { mdt: true }
-
+    
     for (let [key, value] of params) {
+      
+      console.log('[McDev][initialiseStateFromParams][key][value]', key, value)
+      
       if (!ignoreInIframe?.includes(key)) {
         if (value == Number(value)) {
           newState[key] = Number(value)
@@ -125,10 +129,6 @@ var App = props => {
     setStateAux(state => {
       const realNewState =
         typeof newState === 'function' ? newState(state) : newState
-      console.log(
-        `[McDev]${uid ? `[${uid}]` : ``} Updating state to`,
-        realNewState
-      )
       stateRef.current = realNewState
 
       return realNewState
@@ -170,13 +170,6 @@ var App = props => {
   }, [])
 
   const set = (key, value, uid) => {
-    console.log(
-      `[McDev]${uid ? `[${uid}]` : ``}`,
-      'Set',
-      `"${key}"`,
-      'to',
-      `"${value}"`
-    )
 
     if (typeof key === 'object') {
       const newState = {}
@@ -307,6 +300,10 @@ var App = props => {
     'scale',
     'dt_mode'
   ]
+  
+  const ignoreParams = [
+    '__time'
+  ]
 
   const createUrlFromState = (state, noSet) => {
     try {
@@ -320,6 +317,7 @@ var App = props => {
           params.set(key, value)
         }
       }
+            
       const newUrl = `${location.pathname}?${params.toString()}`
       return newUrl
     } catch (err) {
@@ -489,7 +487,6 @@ var App = props => {
 
           // on click set grabbedEl to this element
           el.addEventListener('mousedown', e => {
-            console.log('nik e?.button', e?.button)
 
             // if not with right click
             if (e?.button === 2) {
@@ -787,10 +784,25 @@ var App = props => {
     }
 
     // scroll to saved position on refresh
-    setTimeout(() => {
-      document.addEventListener('scroll', onScroll)
-      window.scrollTo(state?.scrollX || 0, state?.scrollY || 0)
-    }, 1000)
+    let inter = setInterval(() => {
+      const newX = state?.scrollX || 0
+      const newY = state?.scrollY || 0
+      
+      // wait till body height greater than newY
+      if (document.body.scrollHeight >= newY) {
+        console.log('[McDev][scrollTimeout] Scrolling to', newX, newY)
+        window.scrollTo(newX, newY)
+        clearInterval(inter)
+      }
+      
+      // the reason we do this is so that if the body height changes between refreshes
+      // then the scroll listener will never get set if it's smaller than newY
+      setTimeout(() => {
+        document.addEventListener('scroll', onScroll)
+        clearInterval(inter)
+      }, 4000)
+      
+    }, 500)
 
     return () => {
       clearInterval(interval)
@@ -819,8 +831,6 @@ var App = props => {
     return () => clearInterval(interval)
   }, [])
 
-  console.log('[McDev] mdtPositionEls', mdtPositionEls)
-
   const [imgLoading, setImgLoading] = React.useState(false)
 
   const exportScreens = async (id = 'show-all-whens') => {
@@ -829,12 +839,35 @@ var App = props => {
     if (el) {
       document.body.style.zoom = '100%'
       window.Image = window?.ImageOG
-
+      
+      
+      // find the widest instance of .preview-bank
+      let max = 0
+      const widest = Array.from(document.querySelectorAll('.preview-bank'))?.reduce(
+        (acc, el) => {
+          const width = el?.scrollWidth
+          if (width > max) {
+            max = width
+            return el
+          }
+          return acc
+        },
+        null
+      )
+      
+      console.log('nik widest', widest)
       let width = state?.__orientation === 'horizontal' ? 1920 : 1080
 
       if (id === 'selfie') {
         width = el?.scrollWidth
       }
+      
+      if (widest) {
+        width = widest?.scrollWidth
+      }
+      
+      console.log('nik width', width)
+      width = 1000
 
       setImgLoading(true)
 
@@ -876,6 +909,10 @@ var App = props => {
           link.href = png
           link.click()
         })
+        .catch(err => {
+          setImgLoading(false)
+          console.error('Error exporting screens', err)
+        })
     }
   }
 
@@ -884,6 +921,11 @@ var App = props => {
     <>
       <Global
         styles={{
+          'h2': {
+            '&.text-shadow-router': {
+              opacity: state?.screenNames ? 1 : 0.35,
+            }
+          },
           '.figma-preview': {
             opacity:
               state?.figmaPreview == 0 || state?.figmaPreview
@@ -1084,8 +1126,6 @@ var App = props => {
                     value={String(value)}
                     onChange={e => {
                       const val = e.target.value
-
-                      console.log('[McDev] Setting key', key)
 
                       if (val == Number(val)) {
                         if (val?.[val?.length - 1] === '.') {
@@ -1699,7 +1739,50 @@ var App = props => {
                 })}
               </select>
             </Box>
+            
+            {/* Screen Selection Dropdown */}
+            <Box mr={16}>
+              <select
+                style={{
+                  outline: 'none !important',
+                  border: 'none !important',
+                  borderRadius: '8px',
+                  color: 'black',
+                  padding: '6px'
+                }}
+                value={`${state?.__screen_no}`}
+                onChange={e => {
+                  const i = e.target.value
 
+                  if (
+                    !(
+                      i === state?.__screen_no
+                    )
+                  ) {
+                    setState(state => {
+                      return {
+                        ...state,
+                        __screen_no: i,
+                        __startingScreen: i,
+                        __screenRange: 1
+                      }
+                    }, 6)
+                  }
+                }}
+              >
+                {/* loop from 1 to no_of_screens to select screen */}
+                
+                {Array.from({ length: state?.__no_of_screens }, (_, i) => {
+                  i = i + 1
+                  return (
+                    <option value={i}>
+                      Screen {i}
+                    </option>
+                  )
+                })}
+              </select>
+            </Box>
+            
             {/* Toggle showing of all when's */}
             <Box
               ml={24}
@@ -1855,6 +1938,17 @@ var App = props => {
                 }}
               >
                 🥷
+              </Box>
+            </Box>
+            
+            <Box mr={32} title='Toggle Screen Names'>
+              <Box
+                opacity={state?.screenNames ? 1 : 0.45}
+                onClick={() => {
+                  set('screenNames', state?.screenNames ? 0 : 0.3)
+                }}
+              >
+                🪧
               </Box>
             </Box>
 
