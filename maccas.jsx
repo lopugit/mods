@@ -60,7 +60,14 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
       
       console.log('[McDev][initialiseStateFromParams][key][value]', key, value)
       
-      if (!ignoreInIframe?.includes(key)) {
+      if (key === '__stateKey') {
+        // console.log('nik forceState?.__stateKey', forceState?.__stateKey)
+        // console.log('nik initialStateKey', initialStateKey)
+        // console.log('nik key', key)
+      }
+      
+      if (!ignoreInIframe?.includes(key) && (forceState?.__stateKey === initialStateKey || key === '__stateKey' || !Object.hasOwnProperty?.(forceState, key))) {
+        // console.log('nik setting 123')
         if (value == Number(value)) {
           newState[key] = Number(value)
           // remove leading __
@@ -92,11 +99,19 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
 
 console.log('[McDev] Loaded React App')
 
-var App = props => {
+
+// get initialStateKey from window query params stateKey
+// if it exists
+const initialStateKey = new URLSearchParams(window.location.search).get('__stateKey')
+
+const App = props => {
   const location = useLocation()
+  
+  // const [stateKey, setStateKey] = React.useState(initialStateKey ? initialStateKey : '')
+  const [stateKey, setStateKey] = React.useState('')
 
   const stateString = React.useMemo(() => {
-    return localStorage.getItem('maccas-dev-tools')
+    return localStorage.getItem('maccas-dev-tools'+stateKey)
   }, [])
 
   const cachedState = React.useMemo(() => {
@@ -107,7 +122,7 @@ var App = props => {
       throw err
     }
   }, [])
-
+  
   const [state, setStateAux] = React.useState(
     initialiseStateFromParams(
       stateString
@@ -122,6 +137,12 @@ var App = props => {
       location
     )
   )
+  
+  console.log('nik stateKey', stateKey)
+  console.log('nik cachedState', cachedState)
+  console.log('nik cachedState?.scale', cachedState?.scale)
+  console.log('nik state', state)
+  console.log('nik state?.scale', state?.scale)
 
   const stateRef = React.useRef(state)
 
@@ -147,7 +168,7 @@ var App = props => {
     // poll localStorage for changes
     if (state?.iframeMode) {
       const interval = setInterval(() => {
-        const stateString = window.localStorage.getItem('maccas-dev-tools')
+        const stateString = window.localStorage.getItem(stateKey)
 
         if (stateString !== oldStateStringRef?.current) {
           console.log('[McDev] Updating state from localStorage')
@@ -330,11 +351,17 @@ var App = props => {
   React.useEffect(() => {
     stateRef.current = state
 
+    
+    console.log('[McDev] Checking stateKey !== stateKey', state?.stateKey, stateKey, state?.stateKey !== stateKey)
+
     if (!state?.iframeMode) {
       const stringifiedState = JSON.stringify(state)
       oldStateStringRef.current = stringifiedState
-      window.localStorage.setItem('maccas-dev-tools', stringifiedState)
+      console.log('[McDev] Setting localStorage with stateKey', stateKey)
+      window.localStorage.setItem('maccas-dev-tools'+stateKey, stringifiedState)
+      console.log('[McDev] Set localStorage with stateKey', stateKey)
     }
+    
 
     window.MDT.state = state
 
@@ -359,7 +386,7 @@ var App = props => {
     }
 
     setOldState(state)
-  }, [state])
+  }, [state, stateKey])
 
   const iframePadding = 0
 
@@ -788,10 +815,15 @@ var App = props => {
       const newX = state?.scrollX || 0
       const newY = state?.scrollY || 0
       
+      console.log('[McDev][newY]', newY)
+      console.log('[McDev][document.body.scrollHeight]', document.body.scrollHeight)
+      
       // wait till body height greater than newY
       if (document.body.scrollHeight >= newY) {
         console.log('[McDev][scrollTimeout] Scrolling to', newX, newY)
-        window.scrollTo(newX, newY)
+        setTimeout(() => {
+          window.scrollTo(newX, newY)
+        }, 2000)
         clearInterval(inter)
       }
       
