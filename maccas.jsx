@@ -305,8 +305,12 @@ const App = props => {
   const [oldState, setOldState] = React.useState(state)
 
   const refresh = React.useCallback(() => {
-    window.location.reload()
-  }, [])
+    
+    if (state?.refresh !== false) {
+      window.location.reload()
+    }
+    
+  }, [state])
 
   const debouncedRefresh = React.useMemo(
     () => debounce(refresh, 1000),
