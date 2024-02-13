@@ -1200,6 +1200,9 @@ const App = props => {
     'Orientation': ['__allOrientations', '__horizontal', '__vertical'],
     'Whens': ['__allWhens', 'showAllWhens', '__Breakfast', '__MTea', '__Lunch', '__ATea', '__Dinner', '__LateNight', '__Overnight'],
     'Kerwin 🍔': ['__20606', '__20607', '__40259'],
+    'Crash 🦊': [
+      { key: '__happymeal-crash-bandicoot', note: 'Crash Bandicoot Happy Meal' }
+    ],
     'Merch LCM 💰🪙': [
       '__merch-LCM-trial-subtle', 
       '__merch-LCM-trial-vic', 
@@ -1219,7 +1222,7 @@ const App = props => {
       { key: '__40071', note: 'Chocolate Soft Serve McFlurry'},
       { key: '__40072', note: 'Vanilla Soft Serve for Cone'},
       { key: '__40073', note: 'Chocolate Soft Serve for Cone'}
-    ]
+    ],
   }
 
   // template
