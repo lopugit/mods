@@ -50,14 +50,16 @@ try {
   const old = console.log;
   console.log = function () {
     const logger = document.getElementById('mdt-logs');
-    for (var i = 0; i < arguments.length; i++) {
-      if (typeof arguments[i] == 'object') {
-        if (logger) {
-          logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(arguments[i], undefined, 2) : arguments[i]) + '<br />';
-        }
-      } else {
-        if (logger) {
-          logger.innerHTML += arguments[i] + '<br />';
+    if (arguments?.some(a => a?.includes?.('mcout'))) {
+      for (var i = 0; i < arguments.length; i++) {
+        if (typeof arguments[i] == 'object') {
+          if (logger) {
+            logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(arguments[i], undefined, 2) : arguments[i]) + '<br />';
+          }
+        } else {
+          if (logger) {
+            logger.innerHTML += arguments[i] + '<br />';
+          }
         }
       }
     }
