@@ -1198,7 +1198,7 @@ const App = props => {
   const groups = {
     'Region': ['__country'],
     'Orientation': ['__allOrientations', '__horizontal', '__vertical'],
-    'Whens': ['__allWhens', 'showAllWhens', '__Breakfast', '__MTea', '__Lunch', '__ATea', '__Dinner', '__LateNight', '__Overnight'],
+    'Whens': ['__time', '__allWhens', 'showAllWhens', '__Breakfast', '__MTea', '__Lunch', '__ATea', '__Dinner', '__LateNight', '__Overnight'],
     'Kerwin 🍔': ['__20606', '__20607', '__40259'],
     'Crash 🦊': [
       { key: '__happymeal-crash-bandicoot', note: 'Crash Bandicoot Happy Meal' }
