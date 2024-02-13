@@ -379,8 +379,12 @@ const App = props => {
       const stringifiedState = JSON.stringify(state)
       oldStateStringRef.current = stringifiedState
       console.log('[McDev] Setting localStorage with stateKey', stateKey)
-      window.localStorage.setItem('maccas-dev-tools'+stateKey, stringifiedState)
-      console.log('[McDev] Set localStorage with stateKey', stateKey)
+      if (stringifiedState && stringifiedState !== 'undefined') {
+        window.localStorage.setItem('maccas-dev-tools'+stateKey, stringifiedState)
+        console.log('[McDev] Set localStorage with stateKey', stateKey)
+      } else {
+        console.error('Error setting localStorage because stringifiedState was undefined')
+      }
     }
     
 
@@ -996,6 +1000,226 @@ const App = props => {
         })
     }
   }
+  /* sort keys starting with __ to the top but also alphabetically */
+  const sortedState = Object.entries(state || {})
+    ?.sort(([key1, value1], [key2, value2]) => {
+      if (key1?.startsWith('__') && !key2?.startsWith('__')) {
+        return -1
+      } else if (!key1?.startsWith('__') && key2?.startsWith('__')) {
+        return 1
+      } else {
+        return key1?.localeCompare?.(key2)
+      }
+    })
+    
+  const stateInput = ({ key, value, note }) => {
+    
+    let input = null
+
+    const baseInput = (
+      <Input
+        color='black'
+        padding={8}
+        fontFamily='speedee'
+        outline='none'
+        borderRadius='8'
+        value={String(value)}
+        onChange={e => {
+          const val = e.target.value
+
+          if (val == Number(val)) {
+            if (val?.[val?.length - 1] === '.') {
+              set(key, val)
+            } else {
+              set(key, Number(val))
+            }
+          } else {
+            set(key, val)
+          }
+        }}
+      />
+    )
+
+    if (typeof value === 'boolean') {
+      input = (
+        <>
+          <Box
+            w='auto'
+            cursor='pointer'
+            padding={8}
+            bg='white'
+            fontFamily='speedee'
+            borderRadius={8}
+            color='black'
+            onClick={() => set(key, !value)}
+          >
+            {value ? '✅' : '❌'}
+          </Box>
+          {/* <Switch as="div" size="lg" isChecked={value} /> */}
+        </>
+      )
+      // input = <Button onClick={() => set(key, !value)}>{value ? 'true' : 'false'}</Button>
+    } else if (typeof value === 'number') {
+      input = (
+        <Flex w='auto' flexDir='row'>
+          {baseInput}
+          <Grid ml={2} gap={3}>
+            <GridItem
+              bg='white'
+              borderRadius='4'
+              textAlign='center'
+            >
+              <Flex
+                alignItems='center'
+                justifyContent='center'
+                cursor='pointer'
+                color='black'
+                fontSize='18px'
+                px={8}
+                onClick={() => {
+                  const increment = lowStepKeys?.includes(key)
+                    ? lowerStep
+                    : 1
+                  set(key, value + increment)
+                }}
+              >
+                +
+              </Flex>
+            </GridItem>
+            <GridItem
+              bg='white'
+              borderRadius='4'
+              textAlign='center'
+            >
+              <Flex
+                alignItems='center'
+                justifyContent='center'
+                cursor='pointer'
+                color='black'
+                fontSize='18px'
+                px={8}
+                onClick={() => {
+                  const increment = lowStepKeys?.includes(key)
+                    ? lowerStep
+                    : 1
+                  set(key, value - increment)
+                }}
+              >
+                -
+              </Flex>
+            </GridItem>
+          </Grid>
+        </Flex>
+      )
+    } else if (key === '__orientation') {
+      input = (
+        <Flex w='auto' flexDir='row'>
+          {baseInput}
+          <Grid ml={4} gap={3}>
+            <GridItem
+              bg='white'
+              borderRadius='4'
+              textAlign='center'
+            >
+              <Flex
+                alignItems='center'
+                justifyContent='center'
+                cursor='pointer'
+                color='black'
+                fontSize='20px'
+                p={8}
+                width='100%'
+                height='100%'
+                onClick={() => {
+                  if (value === 'horizontal') {
+                    set(key, 'vertical')
+                  } else {
+                    set(key, 'horizontal')
+                  }
+                }}
+              >
+                <img
+                  width='24px'
+                  src='https://emoji.aranja.com/static/emoji-data/img-apple-160/1f501.png'
+                />
+              </Flex>
+            </GridItem>
+          </Grid>
+        </Flex>
+      )
+    } else {
+      input = <Flex>{baseInput}</Flex>
+    }
+
+    return (
+      <Box
+        mb={6}
+        display='flex'
+        flexGrow={0}
+        flexShrink={1}
+        flexDirection='column'
+      >
+        <Flex
+          flexDir='row'
+          w='auto'
+          flexShrink={0}
+          position='relative'
+          fontSize='16px'
+          fontWeight='400'
+          my={8}
+        >
+          {key} {note}
+          <Box
+            ml={4}
+            cursor='pointer'
+            fontSize='10px'
+            onClick={() => deleteKey(key)}
+          >
+            🗑️
+          </Box>
+          {typeof value === 'undefined' && (
+            <Box
+              ml={12}
+              cursor='pointer'
+              fontSize='10px'
+              onClick={() => set(key, !value)}
+            >
+              🌗
+            </Box>
+          )}
+        </Flex>
+        <Flex w='auto' flexShrink={0}>
+          {input}
+        </Flex>
+      </Box>
+    )
+  }
+  
+  const groups = {
+    'Orientation': ['__allOrientations', '__horizontal', '__vertical'],
+    'Whens': ['__allWhens', 'showAllWhens', '__Breakfast', '__MTea', '__Lunch', '__ATea', '__Dinner', '__LateNight', '__Overnight'],
+    'Kerwin 🍔': ['__20606', '__20607', '__40259'],
+    'Merch LCM 💰🪙': [
+      '__merch-LCM-trial-subtle', 
+      '__merch-LCM-trial-vic', 
+      '__merch-LCM-trial-thornleigh',
+      { key: '', note: 'Applicable new RFMs/trials'},
+      { key: '__10031', note: '2x Hash Browns Deal'},
+      { key: '__8574', note: 'LCM Soft Serve Cone with Flake'},
+      { key: '__5026', note: 'LCM 24pc Chicken McNuggets'},
+      { key: '__5738', note: 'LCM Oreo McFlurry'},
+      { key: '__30001', note: 'LCM Hot Fudge Sundae Sml'},
+      { key: '', note: 'Vanilla & Choc Soft RFMs:'},
+      { key: '__40065', note: 'Vanilla Soft Serve for Small Sundae'},
+      { key: '__40066', note: 'Chocolate Soft Serve Small Sundae'},
+      { key: '__40068', note: 'Vanilla oft Serve for Large Sundae'},
+      { key: '__40069', note: 'Chocolate Soft Serve Large Sundae'},
+      { key: '__40070', note: 'Vanilla Soft Serve for McFlurry'},
+      { key: '__40071', note: 'Chocolate Soft Serve McFlurry'},
+      { key: '__40072', note: 'Vanilla Soft Serve for Cone'},
+      { key: '__40073', note: 'Chocolate Soft Serve for Cone'}
+    ]
+  }
 
   // template
   return (
@@ -1183,188 +1407,36 @@ const App = props => {
             maxH={state?.varsMaxH}
             overflowY='scroll'
           >
-            {/* sort keys starting with __ to the top but also alphabetically */}
-            {Object.entries(state)
-              ?.sort(([key1, value1], [key2, value2]) => {
-                if (key1?.startsWith('__') && !key2?.startsWith('__')) {
-                  return -1
-                } else if (!key1?.startsWith('__') && key2?.startsWith('__')) {
-                  return 1
-                } else {
-                  return key1?.localeCompare?.(key2)
-                }
-              })
-              ?.map(([key, value]) => {
-                let input = null
-
-                const baseInput = (
-                  <Input
-                    color='black'
-                    padding={8}
-                    fontFamily='speedee'
-                    outline='none'
-                    borderRadius='8'
-                    value={String(value)}
-                    onChange={e => {
-                      const val = e.target.value
-
-                      if (val == Number(val)) {
-                        if (val?.[val?.length - 1] === '.') {
-                          set(key, val)
-                        } else {
-                          set(key, Number(val))
-                        }
-                      } else {
-                        set(key, val)
-                      }
-                    }}
-                  />
-                )
-
-                if (typeof value === 'boolean') {
-                  input = (
-                    <>
-                      <Box
-                        w='auto'
-                        cursor='pointer'
-                        padding={8}
-                        bg='white'
-                        fontFamily='speedee'
-                        borderRadius={8}
-                        color='black'
-                        onClick={() => set(key, !value)}
-                      >
-                        {value ? '✅' : '❌'}
-                      </Box>
-                      {/* <Switch as="div" size="lg" isChecked={value} /> */}
-                    </>
-                  )
-                  // input = <Button onClick={() => set(key, !value)}>{value ? 'true' : 'false'}</Button>
-                } else if (typeof value === 'number') {
-                  input = (
-                    <Flex w='auto' flexDir='row'>
-                      {baseInput}
-                      <Grid ml={2} gap={3}>
-                        <GridItem
-                          bg='white'
-                          borderRadius='4'
-                          textAlign='center'
-                        >
-                          <Flex
-                            alignItems='center'
-                            justifyContent='center'
-                            cursor='pointer'
-                            color='black'
-                            fontSize='18px'
-                            px={8}
-                            onClick={() => {
-                              const increment = lowStepKeys?.includes(key)
-                                ? lowerStep
-                                : 1
-                              set(key, value + increment)
-                            }}
-                          >
-                            +
-                          </Flex>
-                        </GridItem>
-                        <GridItem
-                          bg='white'
-                          borderRadius='4'
-                          textAlign='center'
-                        >
-                          <Flex
-                            alignItems='center'
-                            justifyContent='center'
-                            cursor='pointer'
-                            color='black'
-                            fontSize='18px'
-                            px={8}
-                            onClick={() => {
-                              const increment = lowStepKeys?.includes(key)
-                                ? lowerStep
-                                : 1
-                              set(key, value - increment)
-                            }}
-                          >
-                            -
-                          </Flex>
-                        </GridItem>
-                      </Grid>
-                    </Flex>
-                  )
-                } else if (key === '__orientation') {
-                  input = (
-                    <Flex w='auto' flexDir='row'>
-                      {baseInput}
-                      <Grid ml={4} gap={3}>
-                        <GridItem
-                          bg='white'
-                          borderRadius='4'
-                          textAlign='center'
-                        >
-                          <Flex
-                            alignItems='center'
-                            justifyContent='center'
-                            cursor='pointer'
-                            color='black'
-                            fontSize='20px'
-                            p={8}
-                            width='100%'
-                            height='100%'
-                            onClick={() => {
-                              if (value === 'horizontal') {
-                                set(key, 'vertical')
-                              } else {
-                                set(key, 'horizontal')
-                              }
-                            }}
-                          >
-                            <img
-                              width='24px'
-                              src='https://emoji.aranja.com/static/emoji-data/img-apple-160/1f501.png'
-                            />
-                          </Flex>
-                        </GridItem>
-                      </Grid>
-                    </Flex>
-                  )
-                } else {
-                  input = <Flex>{baseInput}</Flex>
-                }
-
+            {
+              Object.entries(groups || {})?.map(([groupName, keys]) => {
                 return (
-                  <Box
-                    mb={6}
-                    display='flex'
-                    flexGrow={0}
-                    flexShrink={1}
-                    flexDirection='column'
-                  >
-                    <Flex
-                      flexDir='row'
-                      w='auto'
-                      flexShrink={0}
-                      position='relative'
-                      fontSize='16px'
-                      fontWeight='400'
-                      my={8}
-                    >
-                      {key}
-                      <Box
-                        ml={4}
-                        cursor='pointer'
-                        fontSize='10px'
-                        onClick={() => deleteKey(key)}
-                      >
-                        🗑️
-                      </Box>
-                    </Flex>
-                    <Flex w='auto' flexShrink={0}>
-                      {input}
-                    </Flex>
+                  <Box>
+                    <Box fontSize='36px' my={12} mt={48}>
+                      {groupName}
+                    </Box>
+                    {
+                      keys?.map(keyObj => {
+                        
+                        const key = typeof keyObj === 'string' ? keyObj : keyObj?.key
+                        
+                        return stateInput({ key, value: state?.[key], note: keyObj?.note })
+                      })
+                    }
                   </Box>
                 )
-              })}
+              })
+            }
+            
+            <Box fontSize='36px' my={12} mt={48}>
+              All
+            </Box>
+            {
+              sortedState?.map(([key, value]) => {
+                
+                return stateInput({ key, value })
+                
+              })
+            }
           </Box>
 
           {!state?.iframeMode && !state?.killIframes && (
