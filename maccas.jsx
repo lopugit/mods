@@ -50,7 +50,7 @@ try {
   const old = console.log;
   console.log = function () {
     const logger = document.getElementById('mdt-logs');
-    if (arguments?.some(a => a?.includes?.('mcout'))) {
+    if (arguments?.some?.(a => a?.includes?.('mcout'))) {
       for (var i = 0; i < arguments.length; i++) {
         if (typeof arguments[i] == 'object') {
           if (logger) {
