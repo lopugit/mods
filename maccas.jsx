@@ -233,6 +233,23 @@ const App = props => {
     'LateNight',
     'Overnight'
   ]
+  
+  const copyWithNotification = (string) => {
+    try {
+      navigator.clipboard.writeText(string)
+      set('copiedText', string)
+      set('copied', true)
+
+      setTimeout(() => {
+        set('copied', false)
+        setTimeout(() => {
+          set('copiedText', null)
+        }, 1000)
+      }, 1200)
+    } catch (err) {
+      console.error('Error copying to clipboard', err)
+    }
+  }
 
   const scale = React.useMemo(() => state?.scale || 1, [state])
 
@@ -588,6 +605,7 @@ const App = props => {
             stateRef.current.grabbedMouseY = e.clientY
 
             window.MDT.grabbedEl = el
+            window.MDT.lastEl = el
             stateRef.current.grabbedLeft = left
             stateRef.current.grabbedTop = top
             stateRef.current.grabbedRight = right
@@ -785,21 +803,12 @@ const App = props => {
 
         try {
           const trimmed = string?.trim()
-          navigator.clipboard.writeText(trimmed)
-          set('copiedText', trimmed)
-          set('copied', true)
-
-          setTimeout(() => {
-            set('copied', false)
-            setTimeout(() => {
-              set('copiedText', null)
-            }, 1000)
-          }, 1200)
+          copyWithNotification(trimmed)
         } catch (err) {
           console.error('Error copying to clipboard', err)
         }
       }
-
+      
       window.MDT.grabbedEl = null
       stateRef.current.grabbedLeft = null
       stateRef.current.grabbedTop = null
@@ -850,6 +859,42 @@ const App = props => {
 
   const [mdtPositionEls, setMdtPositionEls] = React.useState([])
   const mdtPositionElsRef = React.useRef(mdtPositionEls)
+  
+  const [elScale, setElScale] = React.useState(1)
+  
+  React.useEffect(() => {
+    if (window?.MDT?.lastEl) {
+      
+      // get the scale from class with format scale-[1.2]
+      
+      const styleScale = window?.MDT?.lastEl?.style?.transform?.match?.(/scale\((.*?)\)/)
+      
+      if (styleScale) {
+        setElScale(styleScale?.[1])
+        return
+      }
+        
+      const elScaleMatch = window?.MDT?.lastEl?.className?.match?.(/scale-\[(.*?)\]/)
+      
+      if (elScaleMatch) {
+        setElScale(elScaleMatch?.[1])
+      }
+      
+    }
+  }, [window?.MDT?.lastEl])
+  
+  // transform lastEl scale by current value of el scale
+  React.useEffect(() => {
+    
+    if (window?.MDT?.lastEl) {
+      console.log('nik elScale', elScale)
+      
+      // set transform scale style of lastEl to elScale
+      window.MDT.lastEl.style.scale = elScale
+      
+    }
+    
+  }, [elScale])
 
   React.useEffect(() => {
     // set up MDTsubscriber
@@ -1612,14 +1657,7 @@ const App = props => {
                                                       [type]: blob
                                                     })
                                                   ]
-
-                                                  navigator.clipboard.write(
-                                                    data
-                                                  )
-
-                                                  setTimeout(() => {
-                                                    set('copied', false)
-                                                  }, 2500)
+                                                  copyWithNotification(data)
                                                 }}
                                                 title='Copy Screen URL to Clipboard'
                                               >
@@ -1938,7 +1976,6 @@ const App = props => {
             </Center>
 
             {/* Slider for figma preview opacity */}
-
             <Box
               mr={32}
               position='relative'
@@ -1974,6 +2011,51 @@ const App = props => {
                 }}
               >
                 🥷
+              </Box>
+            </Box>
+            
+            {/* Slider for current El scale */}
+            <Box
+              mr={32}
+              position='relative'
+              w='100px'
+              title='Adjust Figma Previews'
+            >
+              <Slider
+                aria-label='slider-ex-2'
+                defaultValue={elScale * 100}
+                onChange={val => {
+                  setElScale(val / 100)
+                }}
+                // max value 300
+                max={300}
+              >
+                <SliderTrack h='5px' bg='white'>
+                  <SliderFilledTrack h='100%' bg='rgba(0,0,0,0.3)' />
+                </SliderTrack>
+                <SliderThumb>
+                  <Box
+                    bg='white'
+                    mt={-7}
+                    h='15px'
+                    w='15px'
+                    borderRadius='9999px'
+                  />
+                </SliderThumb>
+              </Slider>
+            </Box>
+            <Box mr={32} title='Toggle Figma Previews'>
+              <Box
+                onClick={() => {
+                  // copy value to clipboard
+                  try {
+                    copyWithNotification(`scale-[${elScale}]`)
+                  } catch (err) {
+                    console.error('Error copying elScale to clipboard', err)
+                  }
+                }}
+              >
+                🎁
               </Box>
             </Box>
             
