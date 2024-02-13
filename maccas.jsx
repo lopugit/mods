@@ -47,24 +47,25 @@ const ignoreInIframe = ['figmaPreview']
 try {
   
   // overwrite console log so McDev can output messages
-  const old = console.log;
-  console.log = function () {
-    const logger = document.getElementById('mdt-logs');
-    if (arguments?.some?.(a => a?.includes?.('mcout'))) {
-      for (var i = 0; i < arguments.length; i++) {
-        if (typeof arguments[i] == 'object') {
-          if (logger) {
-            logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(arguments[i], undefined, 2) : arguments[i]) + '<br />';
-          }
-        } else {
-          if (logger) {
-            logger.innerHTML += arguments[i] + '<br />';
-          }
-        }
-      }
-    }
-    old.apply(this, arguments);
-  }
+  // TBD
+  // const old = console.log;
+  // console.log = function () {
+  //   const logger = document.getElementById('mdt-logs');
+  //   if (arguments?.some?.(a => a?.includes?.('mcout'))) {
+  //     for (var i = 0; i < arguments.length; i++) {
+  //       if (typeof arguments[i] == 'object') {
+  //         if (logger) {
+  //           logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(arguments[i], undefined, 2) : arguments[i]) + '<br />';
+  //         }
+  //       } else {
+  //         if (logger) {
+  //           logger.innerHTML += arguments[i] + '<br />';
+  //         }
+  //       }
+  //     }
+  //   }
+  //   old.apply(this, arguments);
+  // }
 } catch (err) {
   console.error('Error overwriting console.log', err)
 }
