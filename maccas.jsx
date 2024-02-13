@@ -44,6 +44,25 @@ let stateInitialised = false
 
 const ignoreInIframe = ['figmaPreview']
 
+try {
+  
+  // overwrite console log so McDev can output messages
+  const old = console.log;
+  const logger = document.getElementById('mdt-logs');
+  console.log = function () {
+    for (var i = 0; i < arguments.length; i++) {
+      if (typeof arguments[i] == 'object') {
+        logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(arguments[i], undefined, 2) : arguments[i]) + '<br />';
+      } else {
+        logger.innerHTML += arguments[i] + '<br />';
+      }
+    }
+    old.apply(this, arguments);
+  }
+} catch (err) {
+  console.error('Error overwriting console.log', err)
+}
+
 const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
   try {
     if (stateInitialised && !ignoreInitialised) {
@@ -1404,6 +1423,9 @@ const App = props => {
               )}
             </Flex>
           </Flex>
+          
+          <Box id="mdt-logs" fontSize='24px' my={12} display={state?.open ? 'block' : 'none'}>
+          </Box>
 
           {/* This will render all state and allow all values to be editable with special interactions for certain state values/types depending on schema */}
           <Box
