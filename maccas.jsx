@@ -38,7 +38,10 @@ const refreshable = [
   /^__.*/
 ]
 
-const noRefresh = ['__when', '__where']
+const noRefresh = [
+  // '__when', 
+  '__where'
+]
 
 let stateInitialised = false
 
@@ -217,6 +220,8 @@ const App = props => {
   }, [])
 
   const set = (key, value, uid) => {
+    
+    // clear timeout of refresh each time set is called 😂
 
     if (typeof key === 'object') {
       const newState = {}
@@ -346,19 +351,22 @@ const App = props => {
   const [oldParams, setOldParams] = React.useState(location.search)
 
   const [oldState, setOldState] = React.useState(state)
+  
+  const refreshRef = React.useRef({ timeout: null })
 
-  const refresh = React.useCallback(() => {
+  const refresh = () => {
     
-    if (state?.refresh !== false) {
-      window.location.reload()
-    }
+    clearTimeout(refreshRef.current?.timeout)
     
-  }, [state])
-
-  const debouncedRefresh = React.useMemo(
-    () => debounce(refresh, 1000),
-    [refresh]
-  )
+    refreshRef.current.timeout = setTimeout(() => {
+    
+      if (stateRef.current?.refresh !== false) {
+        window.location.reload()
+      }
+      
+    }, 1000)
+    
+  }
 
   const paramWhitelist = [
     'debug',
@@ -428,10 +436,10 @@ const App = props => {
       if (!noRefresh?.includes(key) && value !== oldState[key]) {
         if (refreshable.includes(key)) {
           // debounced refresh
-          debouncedRefresh()
+          refresh()
         } else if (refreshable?.some(r => r.test?.(key))) {
           // debounced refresh
-          debouncedRefresh()
+          refresh()
         }
       }
     }
@@ -1229,6 +1237,12 @@ const App = props => {
     'Crash 🦊': [
       { key: '__happymeal-crash-bandicoot', note: 'Crash Bandicoot Happy Meal' }
     ],
+    'POP 🎈💢': [
+      { key: '__mcpops-trial', note: 'McPops Trial' },
+      { key: '__35228', note: 'Berry'},
+      { key: '__35229', note: 'Chocolate'},
+      { key: '__35227', note: 'Cookiebutter'}
+    ],
     'Merch LCM 💰🪙': [
       '__merch-LCM-trial-subtle', 
       '__merch-LCM-trial-vic', 
@@ -1438,6 +1452,7 @@ const App = props => {
           <Box
             display={state?.open && !state?.hideData ? 'block' : 'none'}
             maxH={state?.varsMaxH}
+            w={'auto'}
             overflowY='scroll'
           >
             {
@@ -1447,14 +1462,16 @@ const App = props => {
                     <Box fontSize='36px' my={12} mt={48}>
                       {groupName}
                     </Box>
-                    {
-                      keys?.map(keyObj => {
-                        
-                        const key = typeof keyObj === 'string' ? keyObj : keyObj?.key
-                        
-                        return stateInput({ key, value: state?.[key], note: keyObj?.note })
-                      })
-                    }
+                    {/* <Flex width="100%" flexShrink={1} maxWidth={"700px"} flexWrap="wrap"> */}
+                      {
+                        keys?.map(keyObj => {
+                          
+                          const key = typeof keyObj === 'string' ? keyObj : keyObj?.key
+                          
+                          return stateInput({ key, value: state?.[key], note: keyObj?.note })
+                        })
+                      }
+                    {/* </Flex> */}
                   </Box>
                 )
               })
