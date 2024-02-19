@@ -1233,6 +1233,16 @@ const App = props => {
     'Region': ['__country'],
     'Orientation': ['__allOrientations', '__horizontal', '__vertical'],
     'Whens': ['__time', '__allWhens', 'showAllWhens', '__Breakfast', '__MTea', '__Lunch', '__ATea', '__Dinner', '__LateNight', '__Overnight'],
+    'HCB': [
+      {
+        key: '__35205',
+        note: 'HCB With Cadbury Choc Chips with butter'
+      },
+      {
+        key: '__7701',
+        note: 'Fruit HCB with butter'
+      }
+    ],
     'Kerwin 🍔': ['__20606', '__20607', '__40259'],
     'Crash 🦊': [
       { key: '__happymeal-crash-bandicoot', note: 'Crash Bandicoot Happy Meal' }
