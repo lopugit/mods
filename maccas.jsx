@@ -915,7 +915,15 @@ const App = props => {
       const elScaleMatch = window?.MDT?.lastEl?.className?.match?.(/scale-\[(.*?)\]/)
       
       if (elScaleMatch) {
+        // remove scale from class
+        window.MDT.lastEl.className = window.MDT.lastEl.className.replace(/scale-\[(.*?)\]/, '')
         setElScale(elScaleMatch?.[1])
+      } else {
+        // check if el has scale style
+        const scale = window?.MDT?.lastEl?.style?.scale
+        if (scale) {
+          setElScale(scale)
+        }
       }
       
     }
@@ -1247,6 +1255,10 @@ const App = props => {
     'Crash 🦊': [
       { key: '__happymeal-crash-bandicoot', note: 'Crash Bandicoot Happy Meal' }
     ],
+    '$12 Nugs': [
+      '__twelve-dollar-nuggets',
+      { key: '__5079', note: '20pc Chicken McNuggets for $12' }
+    ],
     'POP 🎈💢': [
       { key: '__mcpops-trial', note: 'McPops Trial' },
       { key: '__35228', note: 'Berry'},
@@ -1280,6 +1292,9 @@ const App = props => {
     <>
       <Global
         styles={{
+          '.debug-speech-bubble': {
+            opacity: state?.showDebugPill ? 1 : 0,
+          },
           'h2': {
             '&.text-shadow-router': {
               opacity: state?.screenNames ? 1 : 0.35,
@@ -1466,11 +1481,40 @@ const App = props => {
             overflowY='scroll'
           >
             {
-              Object.entries(groups || {})?.map(([groupName, keys]) => {
+              Object.entries(groups || {})
+              ?.sort(([key1, value1], [key2, value2]) => {
+                // sort with pinned first
+                if (state?.[key1] && !state?.[key2]) {
+                  return -1
+                } else if (!state?.[key1] && state?.[key2]) {
+                  return 1
+                } else {
+                  // return key1?.localeCompare?.(key2)
+                }
+              })
+                ?.map(([groupName, keys]) => {
                 return (
                   <Box>
-                    <Box fontSize='36px' my={12} mt={48}>
-                      {groupName}
+                    <Box my={12} mt={48}>
+                      <Box fontSize='36px' display="inline-block"  position="relative">
+                        {groupName}
+                        <Box
+                          position="absolute"
+                          transform="translate(100%, -50%)"
+                          right={0}
+                          cursor="pointer"
+                          top={0}
+                          title="Sticky Group"
+                          fontSize={"26px"}
+                          opacity={state?.[groupName] ? 1 : 0.5}
+                          onClick={() => {
+                            // pin group on click
+                            set(groupName, !state?.[groupName])
+                          }}
+                        >
+                          💛
+                        </Box>
+                      </Box>
                     </Box>
                     {/* <Flex width="100%" flexShrink={1} maxWidth={"700px"} flexWrap="wrap"> */}
                       {
@@ -1987,6 +2031,19 @@ const App = props => {
                   )
                 })}
               </select>
+            </Box>
+            
+            {/* Toggle visibility of debug pull */}
+            
+            <Box
+              mr={32}
+              opacity={state?.showDebugPill ? 1 : 0.45}
+              onClick={() => {
+                set('showDebugPill', !state?.showDebugPill)
+              }}
+              title='Toggle Debug Pill'
+            >
+              🪲
             </Box>
             
             {/* Toggle showing of all when's */}
