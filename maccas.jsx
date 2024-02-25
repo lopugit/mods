@@ -253,7 +253,7 @@ const App = props => {
     console.error('[McDev] Error setting window.MDT.set', err)
   }
 
-  const wheres = ['FrontCounter', 'DriveThru', 'Dining', 'Pylon']
+  const wheres = ['FrontCounter', 'DriveThru', 'Dining', 'Pylon', 'McCafeReel', 'McCafeMenu']
 
   const whens = [
     'Breakfast',
@@ -262,7 +262,8 @@ const App = props => {
     'ATea',
     'Dinner',
     'LateNight',
-    'Overnight'
+    'Overnight',
+    'NotBreakfast'
   ]
   
   const copyWithNotification = (string) => {
@@ -546,6 +547,8 @@ const App = props => {
   const [pageTitle, setPageTitle] = React.useState(document.title)
   const pageTitleRef = React.useRef(pageTitle)
   const [splitChar, setSplitChar] = React.useState('/')
+  
+  const elScaleRef = React.useRef(elScale)
 
   // poll to add adjustment to elements with class .mdt-position
   React.useEffect(() => {
@@ -841,7 +844,11 @@ const App = props => {
 
         try {
           const trimmed = string?.trim()
-          copyWithNotification(trimmed)
+          if (elScaleRef.current) {
+            copyWithNotification(trimmed + ` scale-[${elScaleRef.current}]`)
+          } else {
+            copyWithNotification(trimmed)
+          }
         } catch (err) {
           console.error('Error copying to clipboard', err)
         }
@@ -863,8 +870,8 @@ const App = props => {
 
     // scroll to saved position on refresh
     let inter = setInterval(() => {
-      const newX = state?.scrollX || 0
-      const newY = state?.scrollY || 0
+      const newX = stateRef.current?.scrollX || 0
+      const newY = stateRef.current?.scrollY || 0
       
       console.log('[McDev][newY]', newY)
       console.log('[McDev][document.body.scrollHeight]', document.body.scrollHeight)
@@ -873,7 +880,9 @@ const App = props => {
       if (document.body.scrollHeight >= newY) {
         console.log('[McDev][scrollTimeout] Scrolling to', newX, newY)
         setTimeout(() => {
-          window.scrollTo(newX, newY)
+          if (!stateRef.current?.disableScrollRestore) {
+            window.scrollTo(newX, newY)
+          }
         }, 2000)
         clearInterval(inter)
       }
@@ -937,7 +946,10 @@ const App = props => {
       
       // set transform scale style of lastEl to elScale
       window.MDT.lastEl.style.scale = elScale
+      elScaleRef.current = elScale
       
+    } else {
+      elScaleRef.current = undefined
     }
     
   }, [elScale])
@@ -1240,8 +1252,36 @@ const App = props => {
   const groups = {
     'Region': ['__country'],
     'Orientation': ['__allOrientations', '__horizontal', '__vertical'],
-    'Whens': ['__time', '__allWhens', 'showAllWhens', '__Breakfast', '__MTea', '__Lunch', '__ATea', '__Dinner', '__LateNight', '__Overnight'],
-    'HCB': [
+    'Whens': [
+      '__time', 
+      '__allWhens', 
+      'showAllWhens', 
+      '__Breakfast', 
+      '__MTea', 
+      '__Lunch', 
+      '__ATea', 
+      '__Dinner', 
+      '__LateNight', 
+      '__Overnight',
+      '__NotBreakfast'
+    ],
+    'Creme Brulle': [
+      '__35221',
+      '__35222',
+      '__35223',
+    ],
+    'Big Breakfast Deal': [
+      '__big-breakfast-deal',
+      '__10032'
+    ],
+    'Surprise Fries': [
+      '__surprise-fries'
+    ],
+    'McCrispy': [
+      '__20562',
+      '__20578'
+    ],
+    'Easter / HCB': [
       {
         key: '__35205',
         note: 'HCB With Cadbury Choc Chips with butter'
@@ -1251,7 +1291,11 @@ const App = props => {
         note: 'Fruit HCB with butter'
       }
     ],
-    'Kerwin 🍔': ['__20606', '__20607', '__40259'],
+    'Kerwin 🍔': [
+      '__20606', 
+      '__20607', 
+      '__40259'
+    ],
     'Crash 🦊': [
       { key: '__happymeal-crash-bandicoot', note: 'Crash Bandicoot Happy Meal' }
     ],
@@ -1292,6 +1336,9 @@ const App = props => {
     <>
       <Global
         styles={{
+          body: {
+            paddingBottom: '50vh !important'
+          },
           '.debug-speech-bubble': {
             opacity: state?.showDebugPill ? 1 : 0,
           },
@@ -1306,7 +1353,7 @@ const App = props => {
                 ? state?.figmaPreview
                 : 1,
             pointerEvents: 'none !important',
-            zIndex: 20
+            zIndex: 1000
             // zIndex: state?.figmaTop ? 999999 : 0,
           },
           '.content-preview': {
@@ -1911,6 +1958,23 @@ const App = props => {
                 onChange={e => {
                   const newVal = e.target.value
                   set(['when', '__when'], newVal)
+                  set(`__${newVal}`, true)
+                  
+                  // unset all other whens
+                  // '__allWhens', 
+                  // '__Breakfast', 
+                  // '__MTea', 
+                  // '__Lunch', 
+                  // '__ATea', 
+                  // '__Dinner', 
+                  // '__LateNight', 
+                  // '__Overnight',
+                  // '__NotBreakfast'
+                  
+                  const filteredWhens = whens.filter(val => val !== newVal)?.map(val => '__' + val)
+                  set(['__allWhens', ...filteredWhens], false)
+
+                  
                 }}
                 value={state?.when}
               >
@@ -1947,6 +2011,10 @@ const App = props => {
                       return {
                         ...state,
                         __no_of_screens: screenCount,
+                        __startingScreen: 1,
+                        __screenRange: screenCount,
+                        __maxScreens: 6,
+                        __minScreens: 3,
                         __screen_no: i,
                         __orientation: orientation
                       }
@@ -2131,38 +2199,17 @@ const App = props => {
             >
               🚘
             </Box>
-
-            <Center mr={32}>
+            
+            <Box mr={32} title='Toggle Figma Previews'>
               <Box
+                opacity={state?.figmaPreview ? 1 : 0.45}
                 onClick={() => {
-                  const currentScale =
-                    typeof state?.iframeScale === 'number'
-                      ? state?.iframeScale
-                      : 0.25
-                  set('iframeScale', currentScale - lowerStep)
+                  set('figmaPreview', state?.figmaPreview ? 0 : 0.3)
                 }}
-                title='Decrease Size of iFrames'
-                fontSize={12}
-                p={6}
-                mt={1}
               >
-                🍟
+                🥷
               </Box>
-              <Box
-                onClick={() => {
-                  const currentScale =
-                    typeof state?.iframeScale === 'number'
-                      ? state?.iframeScale
-                      : 0.25
-                  set('iframeScale', currentScale + lowerStep)
-                }}
-                title='Increase Size of iFrames'
-                fontSize={20}
-                p={6}
-              >
-                🍟
-              </Box>
-            </Center>
+            </Box>
 
             {/* Slider for figma preview opacity */}
             <Box
@@ -2191,16 +2238,6 @@ const App = props => {
                   />
                 </SliderThumb>
               </Slider>
-            </Box>
-            <Box mr={32} title='Toggle Figma Previews'>
-              <Box
-                opacity={state?.figmaPreview ? 1 : 0.45}
-                onClick={() => {
-                  set('figmaPreview', state?.figmaPreview ? 0 : 0.3)
-                }}
-              >
-                🥷
-              </Box>
             </Box>
             
             {/* Slider for current El scale */}
@@ -2299,7 +2336,7 @@ const App = props => {
               </Box>
             </Box>
 
-            <Box mr={32} title='Enter Screenshot Mode for iFrames'>
+            {/* <Box mr={32} title='Enter Screenshot Mode for iFrames'>
               <Box
                 opacity={state?.screenshotMode ? 1 : 0.45}
                 onClick={() => {
@@ -2359,7 +2396,7 @@ const App = props => {
                   +
                 </Box>
               </Box>
-            </Flex>
+            </Flex> */}
           </Flex>
         </Box>
       </Box>
