@@ -1251,11 +1251,15 @@ const App = props => {
   
   const groups = {
     'Region': ['__country'],
-    'Orientation': ['__allOrientations', '__horizontal', '__vertical'],
+    'Orientation': [
+      '__allOrientations', 
+      '__horizontal', 
+      '__vertical',
+    ],
     'Whens': [
       '__time', 
       '__allWhens', 
-      'showAllWhens', 
+      '__showAllWhens', 
       '__Breakfast', 
       '__MTea', 
       '__Lunch', 
@@ -1264,6 +1268,14 @@ const App = props => {
       '__LateNight', 
       '__Overnight',
       '__NotBreakfast'
+    ],
+    'Screens': [
+      '__screen_no',
+      '__no_of_screens',
+      '__startingScreen',
+      '__screenRange',
+      '__minScreens',
+      '__maxScreens',
     ],
     'Creme Brulle': [
       '__35221',
@@ -1330,7 +1342,7 @@ const App = props => {
       { key: '__40073', note: 'Chocolate Soft Serve for Cone'}
     ],
   }
-
+  
   // template
   return (
     <>
@@ -2082,7 +2094,9 @@ const App = props => {
                         ...state,
                         __screen_no: i,
                         __startingScreen: i,
-                        __screenRange: 1
+                        __screenRange: 1,
+                        __minScreens: i,
+                        __maxScreens: i
                       }
                     }, 6)
                   }
@@ -2367,6 +2381,8 @@ const App = props => {
               </Box>
             </Box>
 
+            */}
+            
             <Flex>
               <Box
                 title='Scale Down McDev'
@@ -2396,7 +2412,7 @@ const App = props => {
                   +
                 </Box>
               </Box>
-            </Flex> */}
+            </Flex> 
           </Flex>
         </Box>
       </Box>
@@ -2406,7 +2422,9 @@ const App = props => {
 
 const root = ReactDOM.createRoot(document.getElementById('maccas-dev-tools'))
 
-const router = createBrowserRouter([{ path: '/', element: <App /> }])
+const router = createBrowserRouter([
+  { path: '*', element: <App /> }
+])
 
 root.render(
   <React.StrictMode>
