@@ -1295,6 +1295,14 @@ const App = props => {
     ],
     'Easter / HCB': [
       {
+        key: '__hot-cross-buns-easter',
+        note: 'HCB Easter',
+      },
+      {
+        key: '__hot-cross-buns-pre-easter',
+        note: 'HCB Pre Easter',
+      },
+      {
         key: '__35205',
         note: 'HCB With Cadbury Choc Chips with butter'
       },
