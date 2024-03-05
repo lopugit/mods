@@ -2185,7 +2185,14 @@ const App = props => {
               mr={32}
               opacity={state?.__inspiration ? 1 : 0.45}
               onClick={() => {
-                set('__inspiration', !state?.__inspiration)
+                const newVal = !state?.__inspiration
+                set('__inspiration', newVal)
+                
+                // set drive thru mode to false because it breaks inspiration view
+                if (newVal) {
+                  set('dt_mode', false)
+                }
+                
               }}
               title='Toggle Inspiration Mode'
             >
