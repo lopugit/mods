@@ -39,8 +39,8 @@ const refreshable = [
 ]
 
 const noRefresh = [
-  // '__when', 
-  '__where'
+  // '__daypart', 
+  '__area'
 ]
 
 let stateInitialised = false
@@ -253,9 +253,9 @@ const App = props => {
     console.error('[McDev] Error setting window.MDT.set', err)
   }
 
-  const wheres = ['FrontCounter', 'DriveThru', 'Dining', 'Pylon', 'McCafeReel', 'McCafeMenu']
+  const areas = ['FrontCounter', 'DriveThru', 'Dining', 'Pylon', 'McCafeReel', 'McCafeMenu']
 
-  const whens = [
+  const dayparts = [
     'Breakfast',
     'MTea',
     'Lunch',
@@ -297,7 +297,7 @@ const App = props => {
     set('scale', newScale)
   }, [scale])
 
-  // update state when location changes
+  // update state daypart location changes
   // map all query params to state
 
   const updateStateFromParams = forceState => {
@@ -425,7 +425,7 @@ const App = props => {
 
     window.MDT.state = state
 
-    // update query params when state changes
+    // update query params daypart state changes
 
     const newUrl = createUrlFromState(state)
 
@@ -656,7 +656,7 @@ const App = props => {
 
             // store initial mouse offset from origin of element
             // so we can add this to the new mouse position to get the new left and top
-            // when dragging
+            // daypart dragging
             stateRef.current.grabbedMouseOffsetX =
               e.clientX - boundingClientRect?.left
             stateRef.current.grabbedMouseOffsetY =
@@ -972,7 +972,7 @@ const App = props => {
 
   const [imgLoading, setImgLoading] = React.useState(false)
 
-  const exportScreens = async (id = 'show-all-whens') => {
+  const exportScreens = async (id = 'show-all-dayparts') => {
     const el = document.getElementsByClassName(id)?.[0]
 
     if (el) {
@@ -1018,12 +1018,12 @@ const App = props => {
           setImgLoading(false)
 
           const link = document.createElement('a')
-          const whereString =
-            state?.__where === 'FrontCounter'
-              ? state?.__where +
+          const areaString =
+            state?.__area === 'FrontCounter'
+              ? state?.__area +
                 (state?.__foodcourt ? ' -Foodcourt' : '') +
                 (state?.__inspiration ? ' -Inspiration' : '')
-              : state?.__where
+              : state?.__area
 
           const dayOfWeek = new Date().toLocaleString('en-us', {
             weekday: 'long'
@@ -1044,7 +1044,7 @@ const App = props => {
 
           const random4letters = Math.random().toString(36).substring(2, 6)
 
-          link.download = `McDev-${time}-${dayOfWeek}-${whereString}-${state?.__orientation}-${random4letters}.png`
+          link.download = `McDev-${time}-${dayOfWeek}-${areaString}-${state?.__orientation}-${random4letters}.png`
           link.href = png
           link.click()
         })
@@ -1256,10 +1256,10 @@ const App = props => {
       '__horizontal', 
       '__vertical',
     ],
-    'Whens': [
+    'Dayparts': [
       '__time', 
-      '__allWhens', 
-      '__showAllWhens', 
+      '__allDayparts', 
+      '__showAllDayparts', 
       '__Breakfast', 
       '__MTea', 
       '__Lunch', 
@@ -1610,319 +1610,6 @@ const App = props => {
             }
           </Box>
 
-          {!state?.iframeMode && !state?.killIframes && (
-            <Box
-              maxH={state?.previewsMaxH}
-              overflowY='scroll'
-              className='selfie'
-              display={state?.open && !state?.hideIframes ? 'block' : 'none'}
-            >
-              {allPreviews?.map(nScreens => {
-                const screenCount = nScreens?.[0]?.__no_of_screens
-
-                const uid = `show${screenCount}`
-
-                return (
-                  <Box key={uid} my={32}>
-                    <Text
-                      display={state?.screenshotMode ? 'none' : 'block'}
-                      cursor='pointer'
-                      fontSize='32px'
-                      onClick={() => {
-                        if (!state?.[uid]) {
-                          set([uid, uid + 'disp'], true)
-                        } else {
-                          set(uid + 'disp', !state?.[uid + 'disp'])
-                        }
-                      }}
-                      title={`
-                      Hide or Show Bank of ${screenCount} Screens
-                    `}
-                    >
-                      {screenCount} Screens
-                    </Text>
-                    {state?.[uid] &&
-                      nScreens.map(bank => {
-                        const orientation = bank.__orientation
-
-                        const width = orientation === 'horizontal' ? 1920 : 1080
-                        const height =
-                          orientation === 'horizontal' ? 1080 : 1920
-
-                        const uid2 = `show${screenCount}${orientation}`
-
-                        const mappable = Array(bank?.__no_of_screens).fill()
-
-                        return (
-                          <Box
-                            key={uid2}
-                            display={state?.[uid + 'disp'] ? 'block' : 'none'}
-                            my={24}
-                          >
-                            <Flex
-                              cursor='pointer'
-                              flexDir='row'
-                              alignItems='center'
-                            >
-                              <Text
-                                display={
-                                  state?.screenshotMode &&
-                                  !state?.[uid2 + 'disp']
-                                    ? 'none'
-                                    : 'block'
-                                }
-                                onClick={() => {
-                                  if (!state?.[uid2]) {
-                                    set([uid2, uid2 + 'disp'], true)
-                                  } else {
-                                    set(uid2 + 'disp', !state?.[uid2 + 'disp'])
-                                  }
-                                }}
-                                mr={5}
-                                fontSize='24px'
-                                textTransform='capitalize'
-                                title={`
-                            Hide or Show ${screenCount} ${orientation} Screens
-                          `}
-                              >
-                                {/* Horizontal or Vertical */}
-                                {screenCount} {orientation}
-                              </Text>
-
-                              {/* map using number of screens hack with array */}
-                              {mappable.map((_, fakei) => {
-                                // if dt_mode true then make i go from length to 1
-                                if (state?.dt_mode) {
-                                  fakei = mappable?.length - fakei - 1
-                                }
-
-                                const i = fakei + 1
-
-                                return (
-                                  <Box
-                                    display={
-                                      state?.screenshotMode &&
-                                      !state?.[uid2 + 'disp']
-                                        ? 'none'
-                                        : 'block'
-                                    }
-                                    mt={-5}
-                                    ml={2}
-                                    title={'Toggle Visibility of Screen ' + i}
-                                    width={width / 100 + 'px'}
-                                    height={height / 100 + 'px'}
-                                    onClick={() => {
-                                      const newVal =
-                                        state?.[uid2 + 'disp' + i] !== false
-                                          ? false
-                                          : true
-                                      set(uid2 + 'disp' + i, newVal)
-                                    }}
-                                    cursor='pointer'
-                                    transition='all 300ms ease'
-                                    _hover={{
-                                      opacity: 0.75
-                                    }}
-                                    opacity={
-                                      state?.[uid2 + 'disp' + i] === false
-                                        ? 0.5
-                                        : 1
-                                    }
-                                    bg='white'
-                                    borderRadius='3'
-                                  ></Box>
-                                )
-                              })}
-                            </Flex>
-
-                            <Box
-                              display={
-                                state?.[uid2 + 'disp'] ? 'block' : 'none'
-                              }
-                              py={7}
-                              width='100%'
-                              overflow='scroll'
-                            >
-                              <Flex
-                                flexDir='row'
-                                maxWidth='100%'
-                                height='auto'
-                                overflow='scroll'
-                              >
-                                {state?.[uid2] &&
-                                  mappable.map((_, fakei) => {
-                                    // if dt_mode true then make i go from length to 1
-                                    if (state?.dt_mode) {
-                                      fakei = mappable?.length - fakei - 1
-                                    }
-
-                                    const i = fakei + 1
-
-                                    return (
-                                      <>
-                                        {!(
-                                          state?.[uid2 + 'disp' + i] === false
-                                        ) && (
-                                          <Box
-                                            sx={{
-                                              iframe: {
-                                                transform: `scale(${
-                                                  state?.iframeScale || 0.25
-                                                })`
-                                              }
-                                            }}
-                                            key={uid2 + '_' + fakei}
-                                            mr={4}
-                                            cursor='pointer'
-                                          >
-                                            <Flex
-                                              padding={iframePadding}
-                                              alignItems='center'
-                                              justifyContent='center'
-                                            >
-                                              <Box
-                                                maxWidth={
-                                                  width *
-                                                    (state?.iframeScale ||
-                                                      0.25) +
-                                                  'px'
-                                                }
-                                                maxHeight={
-                                                  height *
-                                                    (state?.iframeScale ||
-                                                      0.25) +
-                                                  'px'
-                                                }
-                                                position='relative'
-                                                overflow='hidden'
-                                                bg='white'
-                                              >
-                                                <Flex
-                                                  position='absolute'
-                                                  top='0'
-                                                  left='0'
-                                                  width='100%'
-                                                  height='100%'
-                                                  alignItems='center'
-                                                  justifyContent='center'
-                                                >
-                                                  <img
-                                                    width='160px'
-                                                    src={
-                                                      window?.MDT?.baseUrl +
-                                                      'McLoading4.gif'
-                                                    }
-                                                  ></img>
-                                                </Flex>
-                                                {getCachedIframe(
-                                                  screenCount,
-                                                  orientation,
-                                                  i,
-                                                  width,
-                                                  height
-                                                )}
-                                              </Box>
-                                            </Flex>
-                                            <Flex
-                                              display={
-                                                state?.screenshotMode
-                                                  ? 'none'
-                                                  : 'flex'
-                                              }
-                                              flexDir='row'
-                                              gap={8}
-                                              py={10}
-                                            >
-                                              <Box color='white'>{i}</Box>
-                                              <Box
-                                                onClick={() => {
-                                                  if (
-                                                    !(
-                                                      i ===
-                                                        state?.__screen_no &&
-                                                      orientation ===
-                                                        state?.__orientation &&
-                                                      screenCount ===
-                                                        state?.__no_of_screens
-                                                    )
-                                                  ) {
-                                                    setState(state => {
-                                                      return {
-                                                        ...state,
-                                                        __no_of_screens:
-                                                          screenCount,
-                                                        __screen_no: i,
-                                                        __orientation:
-                                                          orientation
-                                                      }
-                                                    }, 6)
-                                                  }
-                                                }}
-                                                title={
-                                                  i === state?.__screen_no &&
-                                                  orientation ===
-                                                    state?.__orientation &&
-                                                  screenCount ===
-                                                    state?.__no_of_screens
-                                                    ? 'Selected Screen'
-                                                    : 'Select Screen'
-                                                }
-                                              >
-                                                {i === state?.__screen_no &&
-                                                orientation ===
-                                                  state?.__orientation &&
-                                                screenCount ===
-                                                  state?.__no_of_screens
-                                                  ? '🌈🦄✨🍔🍟'
-                                                  : '👀'}
-                                              </Box>
-                                              <Box
-                                                onClick={() => {
-                                                  set('copied', true)
-
-                                                  const url =
-                                                    'localhost:8080' +
-                                                    createUrlFromState({
-                                                      ...state,
-                                                      debug: true,
-                                                      __no_of_screens:
-                                                        screenCount,
-                                                      __screen_no: i,
-                                                      __orientation: orientation
-                                                    })
-
-                                                  const type = 'text/plain'
-                                                  const blob = new Blob([url], {
-                                                    type
-                                                  })
-                                                  const data = [
-                                                    new ClipboardItem({
-                                                      [type]: blob
-                                                    })
-                                                  ]
-                                                  copyWithNotification(data)
-                                                }}
-                                                title='Copy Screen URL to Clipboard'
-                                              >
-                                                📎
-                                              </Box>
-                                            </Flex>
-                                          </Box>
-                                        )}
-                                      </>
-                                    )
-                                  })}
-                              </Flex>
-                            </Box>
-                          </Box>
-                        )
-                      })}
-                  </Box>
-                )
-              })}
-            </Box>
-          )}
-
           <Flex
             userSelect='none'
             ml='auto'
@@ -1940,7 +1627,7 @@ const App = props => {
               }
             }}
           >
-            {/* Where Selection Dropdown */}
+            {/* Area Selection Dropdown */}
             <Box
               // lower gap for these
               mr={16}
@@ -1955,17 +1642,17 @@ const App = props => {
                 }}
                 onChange={e => {
                   const newVal = e.target.value
-                  set(['where', '__where'], newVal)
+                  set(['area', '__area'], newVal)
                 }}
-                value={state?.where}
+                value={state?.area}
               >
-                {wheres.map(val => {
+                {areas.map(val => {
                   return <option key={val}>{val}</option>
                 })}
               </select>
             </Box>
 
-            {/* When Selection Dropdown */}
+            {/* Daypart Selection Dropdown */}
             <Box mr={16}>
               <select
                 style={{
@@ -1977,11 +1664,11 @@ const App = props => {
                 }}
                 onChange={e => {
                   const newVal = e.target.value
-                  set(['when', '__when'], newVal)
+                  set(['daypart', '__daypart'], newVal)
                   set(`__${newVal}`, true)
                   
-                  // unset all other whens
-                  // '__allWhens', 
+                  // unset all other dayparts
+                  // '__allDayparts', 
                   // '__Breakfast', 
                   // '__MTea', 
                   // '__Lunch', 
@@ -1991,14 +1678,14 @@ const App = props => {
                   // '__Overnight',
                   // '__NotBreakfast'
                   
-                  const filteredWhens = whens.filter(val => val !== newVal)?.map(val => '__' + val)
-                  set(['__allWhens', ...filteredWhens], false)
+                  const filteredDayparts = dayparts.filter(val => val !== newVal)?.map(val => '__' + val)
+                  set(['__allDayparts', ...filteredDayparts], false)
 
                   
                 }}
-                value={state?.when}
+                value={state?.daypart}
               >
-                {whens.map(val => {
+                {dayparts.map(val => {
                   return <option key={val}>{val}</option>
                 })}
               </select>
@@ -2136,13 +1823,13 @@ const App = props => {
               🪲
             </Box>
             
-            {/* Toggle showing of all when's */}
+            {/* Toggle showing of all daypart's */}
             <Box
               ml={24}
               mr={32}
-              opacity={state?.showAllWhens ? 1 : 0.45}
+              opacity={state?.showAllDayparts ? 1 : 0.45}
               onClick={() => {
-                set('showAllWhens', !state?.showAllWhens)
+                set('showAllDayparts', !state?.showAllDayparts)
               }}
               title="Toggle Showing of All Time's for this Location"
             >
@@ -2221,7 +1908,14 @@ const App = props => {
             <Box
               mr={32}
               onClick={() => {
-                set('dt_mode', !state?.dt_mode)
+                const newVal = !state?.dt_mode
+                set('dt_mode', newVal)
+                
+                if (newVal) {
+                  set('__screenRange', 3)
+                  set('__minScreens', 3)
+                  set('__maxScreens', 3)
+                }
               }}
               title='Toggle Drive Thru Mode (Reverse Order of Screens)'
               opacity={state?.dt_mode ? 1 : 0.45}
@@ -2325,35 +2019,6 @@ const App = props => {
               </Box>
             </Box>
 
-            <Box mr={32} title='Hide All iFrames'>
-              <Box
-                opacity={!state?.hideIframes ? 1 : 0.45}
-                onClick={() => {
-                  if (state?.killIframes) {
-                    set(
-                      ['hideIframes', 'killIframes'],
-                      [!state?.hideIframes, !state?.hideIframes]
-                    )
-                  } else {
-                    set('hideIframes', !state?.hideIframes)
-                  }
-                }}
-              >
-                👀
-              </Box>
-            </Box>
-
-            <Box mr={32} title='Unload/Kill All iFrames'>
-              <Box
-                opacity={!state?.killIframes ? 1 : 0.45}
-                onClick={() => {
-                  set(['hideIframes', 'killIframes'], !state?.killIframes)
-                }}
-              >
-                ☠️
-              </Box>
-            </Box>
-
             <Box mr={32} title='Show Debug State'>
               <Box
                 opacity={!state?.hideData ? 1 : 0.45}
@@ -2364,39 +2029,6 @@ const App = props => {
                 ✏️
               </Box>
             </Box>
-
-            {/* <Box mr={32} title='Enter Screenshot Mode for iFrames'>
-              <Box
-                opacity={state?.screenshotMode ? 1 : 0.45}
-                onClick={() => {
-                  set('screenshotMode', !state?.screenshotMode)
-                }}
-              >
-                🎥
-              </Box>
-            </Box>
-
-            <Box mr={32} title='Capture the McDev window as a screenshot'>
-              <Box
-                onClick={() => {
-                  exportScreens('selfie')
-                }}
-              >
-                🤳
-              </Box>
-            </Box>
-
-            <Box mr={32} title='Save Current Screens to PNG'>
-              <Box
-                onClick={() => {
-                  exportScreens()
-                }}
-              >
-                {imgLoading ? '📸' : '📷'}
-              </Box>
-            </Box>
-
-            */}
             
             <Flex>
               <Box
