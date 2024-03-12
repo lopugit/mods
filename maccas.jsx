@@ -1297,7 +1297,23 @@ const App = props => {
       '__10032'
     ],
     'Surprise Fries': [
-      '__surprise-fries'
+      '__surprise-fries',
+      {
+        key: '__30061',
+        note: 'Caramel Flurry'
+      },
+      {
+        key: '__30062',
+        note: 'LCM Chocolate Flurry LCM'
+      },
+      {
+        key: '__40071',
+        note: 'Chocolate Flurry'
+      },
+      {
+        key: '__mcflurry-caramello',
+        note: 'Caramello McFlurry Campaign'
+      }
     ],
     'Chicken Muffins 🐔🍗': [
       // turn into groups
