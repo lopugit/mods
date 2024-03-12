@@ -1744,8 +1744,8 @@ const App = props => {
                         __no_of_screens: screenCount,
                         __startingScreen: 1,
                         __screenRange: screenCount,
-                        __maxScreens: 6,
-                        __minScreens: 3,
+                        __maxScreens: screenCount,
+                        __minScreens: screenCount,
                         __screen_no: i,
                         __orientation: orientation
                       }
@@ -1756,6 +1756,7 @@ const App = props => {
                     set('__horizontal', orientation === 'horizontal')
                     set('__vertical', orientation === 'vertical')
                     set('__allOrientations', false)
+                    
                   }
                 }}
               >
