@@ -1289,6 +1289,30 @@ const App = props => {
     'Surprise Fries': [
       '__surprise-fries'
     ],
+    'Chicken Muffins 🐔🍗': [
+      // turn into groups
+      // 40266 - CHICKEN MCMUFFIN
+      // 40267 - CHICKEN MCMUFFIN - VM
+
+      // 40268 - CHICKEN & BACON MCMUFFIN
+      // 40269 - CHICKEN&BACON MCMUFFIN - VM
+      {
+        key: '__40266',
+        note: 'Chicken McMuffin'
+      },
+      {
+        key: '__40267',
+        note: 'Chicken McMuffin - VM'
+      },
+      {
+        key: '__40268',
+        note: 'Chicken & Bacon McMuffin'
+      },
+      {
+        key: '__40269',
+        note: 'Chicken & Bacon McMuffin - VM'
+      }
+    ],
     'McCrispy': [
       '__20562',
       '__20578'
@@ -1726,6 +1750,12 @@ const App = props => {
                         __orientation: orientation
                       }
                     }, 6)
+                    
+                    // set __horizontal and __vertical according to new orientation switch
+                    
+                    set('__horizontal', orientation === 'horizontal')
+                    set('__vertical', orientation === 'vertical')
+                    set('__allOrientations', false)
                   }
                 }}
               >
@@ -1859,6 +1889,11 @@ const App = props => {
                 const newOrientation =
                   curOrientation === 'horizontal' ? 'vertical' : 'horizontal'
                 set('__orientation', newOrientation)
+            
+                set('__horizontal', newOrientation === 'horizontal')
+                set('__vertical', newOrientation === 'vertical')
+                set('__allOrientations', false)
+                
               }}
               title='Toggle Orientation'
             >
@@ -1915,6 +1950,8 @@ const App = props => {
                   set('__screenRange', 3)
                   set('__minScreens', 3)
                   set('__maxScreens', 3)
+                  set('__inspiration', false)
+                  set('__foodcourt', false)
                 }
               }}
               title='Toggle Drive Thru Mode (Reverse Order of Screens)'
