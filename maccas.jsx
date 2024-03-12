@@ -89,14 +89,7 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
       
       console.log('[McDev][initialiseStateFromParams][key][value]', key, value)
       
-      if (key === '__stateKey') {
-        // console.log('nik forceState?.__stateKey', forceState?.__stateKey)
-        // console.log('nik initialStateKey', initialStateKey)
-        // console.log('nik key', key)
-      }
-      
       if (!ignoreInIframe?.includes(key) && (forceState?.__stateKey === initialStateKey || key === '__stateKey' || !Object.hasOwnProperty?.(forceState, key))) {
-        // console.log('nik setting 123')
         if (value == Number(value)) {
           newState[key] = Number(value)
           // remove leading __
@@ -167,11 +160,6 @@ const App = props => {
     )
   )
   
-  console.log('nik stateKey', stateKey)
-  console.log('nik cachedState', cachedState)
-  console.log('nik cachedState?.scale', cachedState?.scale)
-  console.log('nik state', state)
-  console.log('nik state?.scale', state?.scale)
 
   const stateRef = React.useRef(state)
 
@@ -218,8 +206,12 @@ const App = props => {
       return () => clearInterval(interval)
     }
   }, [])
+  
+  const lastKeyRef = React.useRef("")
 
   const set = (key, value, uid) => {
+    
+    lastKeyRef.current = key
     
     // clear timeout of refresh each time set is called 😂
 
@@ -403,7 +395,8 @@ const App = props => {
 
     return 'Error'
   }
-
+  
+  // watch state
   React.useEffect(() => {
     stateRef.current = state
 
@@ -446,6 +439,26 @@ const App = props => {
     }
 
     setOldState(state)
+    
+    const lastKey = lastKeyRef.current
+    
+    console.log('nik lastKey', lastKey)
+    
+    if (!['__horizontal', '__vertical']?.includes(lastKey) && state?.__allOrientations === true) {
+      if (state?.__horizontal !== true) {
+        set('__horizontal', true)
+      }
+      if (state?.__vertical !== true) {
+        set('__vertical', true)
+      }
+    } else if ([['__horizontal', '__vertical']]?.includes(lastKey)) {
+      if (lastKey === '__horizontal') {
+        set(['__vertical', '__allOrientations'], !state?.__horizontal)
+      } else if (lastKey === '__vertical') {
+        set(['__horizontal', '__allOrientations'], !state?.__vertical)
+      }
+    }
+    
   }, [state, stateKey])
 
   const iframePadding = 0
@@ -942,7 +955,6 @@ const App = props => {
   React.useEffect(() => {
     
     if (window?.MDT?.lastEl) {
-      console.log('nik elScale', elScale)
       
       // set transform scale style of lastEl to elScale
       window.MDT.lastEl.style.scale = elScale
@@ -994,7 +1006,6 @@ const App = props => {
         null
       )
       
-      console.log('nik widest', widest)
       let width = state?.__orientation === 'horizontal' ? 1920 : 1080
 
       if (id === 'selfie') {
@@ -1005,7 +1016,6 @@ const App = props => {
         width = widest?.scrollWidth
       }
       
-      console.log('nik width', width)
       width = 1000
 
       setImgLoading(true)
@@ -1821,8 +1831,6 @@ const App = props => {
                         __screen_no: i,
                         __startingScreen: i,
                         __screenRange: 1,
-                        __minScreens: i,
-                        __maxScreens: i
                       }
                     }, 6)
                   }
