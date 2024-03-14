@@ -291,6 +291,42 @@ const App = props => {
 
   // update state daypart location changes
   // map all query params to state
+  
+  const [logs, setLogs] = React.useState(null)
+  
+  const logsRef = React.useRef(logs)
+  
+  const log = (...rest) => {
+    
+    // create string delimitted by spaces out of all arguments, similar to console log, and push to logs object
+    
+    const logs = logsRef.current instanceof Array ? logsRef.current : []
+    
+    const newLogs = []
+    
+    if (rest) {
+      console.log('nik rest', rest)
+      // add current minute seconds ms timestamp at start
+      newLogs.push(
+        new Date().toLocaleTimeString('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }) + ': ' +
+        Array.from(rest).join(' '))
+    }
+    
+    newLogs.push(...logs)
+    
+    logsRef.current = newLogs
+    setLogs(newLogs)
+    
+  }
+  
+  window.mclog = log
+  window.McLog = log
+  window.Mclog = log
 
   const updateStateFromParams = forceState => {
     const params = new URLSearchParams(location.search)
@@ -1296,15 +1332,18 @@ const App = props => {
       '__big-breakfast-deal',
       '__10032'
     ],
+        
     'Surprise Fries': [
       '__surprise-fries',
+    ],
+    'Caramello Flurry': [
       {
         key: '__30061',
         note: 'Caramel Flurry'
       },
       {
         key: '__30062',
-        note: 'LCM Chocolate Flurry LCM'
+        note: 'LCM Caramel Flurry LCM'
       },
       {
         key: '__40071',
@@ -1322,6 +1361,12 @@ const App = props => {
 
       // 40268 - CHICKEN & BACON MCMUFFIN
       // 40269 - CHICKEN&BACON MCMUFFIN - VM
+      
+      {
+        key: '__chicken-mcmuffin',
+        note: 'Chicken McMuffin Campaign'
+      },
+      
       {
         key: '__40266',
         note: 'Chicken McMuffin'
@@ -1587,8 +1632,19 @@ const App = props => {
             </Flex>
           </Flex>
           
-          <Box id="mdt-logs" fontSize='24px' my={12} display={state?.open ? 'block' : 'none'}>
-          </Box>
+          <Flex maxH={state?.logMaxH ?? "200px"} overflowY="scroll" display={state?.open && logs?.length ? undefined : 'none'} flexDir="column" id="mdt-logs" borderRadius={12} gap={12} bg="rgba(255,255,255,0.1)" fontSize='24px' my={12} p={12}>
+            
+            {logs?.map?.((log, i) => {
+              
+              return (
+                <Box gap={12} key={i} fontSize='24px'>
+                  {log}
+                </Box>
+              )
+              
+            })}
+            
+          </Flex>
 
           {/* This will render all state and allow all values to be editable with special interactions for certain state values/types depending on schema */}
           <Box
@@ -1972,11 +2028,15 @@ const App = props => {
                 set('dt_mode', newVal)
                 
                 if (newVal) {
+                  set('__area', 'DriveThru')
                   set('__screenRange', 3)
                   set('__minScreens', 3)
                   set('__maxScreens', 3)
                   set('__inspiration', false)
                   set('__foodcourt', false)
+                  set('__orientation', 'vertical')
+                  set('__vertical', true)
+                  set('__horizontal', false)
                 }
               }}
               title='Toggle Drive Thru Mode (Reverse Order of Screens)'
