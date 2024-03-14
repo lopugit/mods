@@ -1406,6 +1406,7 @@ const App = (props) => {
             padding={16}
             color="white"
             w="auto"
+            maxH={(window.outerHeight * 0.65) / scaleRef.current + 'px'}
             borderRadius="16px"
             bg="#DD2514"
             transformOrigin="bottom right"
