@@ -1632,7 +1632,7 @@ const App = props => {
             </Flex>
           </Flex>
           
-          <Flex maxH={state?.logMaxH ?? "200px"} overflowY="scroll" display={state?.open && logs?.length ? undefined : 'none'} flexDir="column" id="mdt-logs" borderRadius={12} gap={12} bg="rgba(255,255,255,0.1)" fontSize='24px' my={12} p={12}>
+          <Flex maxH={state?.logMaxH ?? "200px"} overflowY="scroll" display={state?.open && logs?.length && state?.showLogs !== false ? undefined : 'none'} flexDir="column" id="mdt-logs" borderRadius={12} gap={12} bg="rgba(255,255,255,0.1)" fontSize='24px' my={12} p={12}>
             
             {logs?.map?.((log, i) => {
               
@@ -2127,6 +2127,19 @@ const App = props => {
                 }}
               >
                 🎁
+              </Box>
+            </Box>
+            
+            {/* Toggle Logs */}
+            
+            <Box mr={32} title='Toggle Logs'>
+              <Box
+                opacity={state?.showLogs ? 1 : 0.45}
+                onClick={() => {
+                  set('showLogs', !state?.showLogs)
+                }}
+              >
+                📜
               </Box>
             </Box>
             
