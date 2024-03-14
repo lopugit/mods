@@ -1406,7 +1406,7 @@ const App = (props) => {
             padding={16}
             color="white"
             w="auto"
-            maxH={(window.outerHeight * 0.65) / scaleRef.current + 'px'}
+            maxH={(window.outerHeight * 0.8) / scaleRef.current + 'px'}
             borderRadius="16px"
             bg="#DD2514"
             transformOrigin="bottom right"
@@ -1462,12 +1462,12 @@ const App = (props) => {
             </Flex>
 
             <Flex
-              maxH={state?.logMaxH ?? '200px'}
               overflowY="scroll"
               display={state?.open && logs?.length && state?.showLogs !== false ? undefined : 'none'}
               flexDir="column"
               id="mdt-logs"
               borderRadius={12}
+              maxH={(window.outerHeight * (state.maxHLog || 0.2)) / scaleRef.current + 'px'}
               gap={12}
               // bg="rgba(255,255,255,0.1)"
               bg="#FFCD2733"
@@ -1485,9 +1485,9 @@ const App = (props) => {
             </Flex>
 
             <Flex
-              maxH={state?.searchMaxH ?? '800px'}
               overflowY="scroll"
               display={state?.open && state?.showSearch !== false ? undefined : 'none'}
+              maxH={(window.outerHeight * (state.maxHSearch || 0.5)) / scaleRef.current + 'px'}
               flexDir="column"
               id="csv-search"
               borderRadius={12}
@@ -1538,6 +1538,7 @@ const App = (props) => {
             <Box
               display={state?.open && !state?.hideData ? 'block' : 'none'}
               // maxH={state?.varsMaxH}
+              maxH={(window.outerHeight * (state.maxHData || 0.3)) / scaleRef.current + 'px'}
               w={'auto'}
               overflowY="scroll"
             >
