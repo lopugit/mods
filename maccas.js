@@ -119,6 +119,9 @@ try {
             import debounce from "https://esm.sh/debounce@2.0.0";
             window.debounce = debounce
             
+            import * as Fuse from "https://esm.sh/fuse.js@6";
+            window.Fuse = Fuse?.default
+            
             import * as Emotion from 'https://esm.sh/@emotion/react@11.11.3';
             window.Emotion = Emotion          
             
