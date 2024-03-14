@@ -87,7 +87,6 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
     
     for (let [key, value] of params) {
       
-      console.log('[McDev][initialiseStateFromParams][key][value]', key, value)
       
       if (!ignoreInIframe?.includes(key) && (forceState?.__stateKey === initialStateKey || key === '__stateKey' || !Object.hasOwnProperty?.(forceState, key))) {
         if (value == Number(value)) {
@@ -119,7 +118,6 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
   }
 }
 
-console.log('[McDev] Loaded React App')
 
 
 // get initialStateKey from window query params stateKey
@@ -188,7 +186,6 @@ const App = props => {
         const stateString = window.localStorage.getItem(stateKey)
 
         if (stateString !== oldStateStringRef?.current) {
-          console.log('[McDev] Updating state from localStorage')
           oldStateStringRef.current = stateString
           try {
             const newState = initialiseStateFromParams(
@@ -305,7 +302,6 @@ const App = props => {
     const newLogs = []
     
     if (rest) {
-      console.log('nik rest', rest)
       // add current minute seconds ms timestamp at start
       newLogs.push(
         new Date().toLocaleTimeString('en-GB', {
@@ -353,8 +349,6 @@ const App = props => {
       }
     }
 
-    console.log('[McDev][updateStateFromParams][paramsObj]', paramsObj)
-    console.log('[McDev][updateStateFromParams][newState]', newState)
 
     setState(state => {
       return { ...state, ...newState }
@@ -437,15 +431,12 @@ const App = props => {
     stateRef.current = state
 
     
-    console.log('[McDev] Checking stateKey !== stateKey', state?.stateKey, stateKey, state?.stateKey !== stateKey)
 
     if (!state?.iframeMode) {
       const stringifiedState = JSON.stringify(state)
       oldStateStringRef.current = stringifiedState
-      console.log('[McDev] Setting localStorage with stateKey', stateKey)
       if (stringifiedState && stringifiedState !== 'undefined') {
         window.localStorage.setItem('maccas-dev-tools'+stateKey, stringifiedState)
-        console.log('[McDev] Set localStorage with stateKey', stateKey)
       } else {
         console.error('Error setting localStorage because stringifiedState was undefined')
       }
@@ -478,7 +469,6 @@ const App = props => {
     
     const lastKey = lastKeyRef.current
     
-    console.log('nik lastKey', lastKey)
     
     if (!['__horizontal', '__vertical']?.includes(lastKey) && state?.__allOrientations === true) {
       if (state?.__horizontal !== true) {
@@ -710,43 +700,6 @@ const App = props => {
               e.clientX - boundingClientRect?.left
             stateRef.current.grabbedMouseOffsetY =
               e.clientY - boundingClientRect?.top
-
-            const debug = false
-
-            if (debug) {
-              console.log('[McDebug][mousedown] left', left)
-              console.log('[McDebug][mousedown] top', top)
-              console.log('[McDebug][mousedown] right', right)
-              console.log('[McDebug][mousedown] bottom', bottom)
-              console.log(
-                '[McDebug][mousedown] boundingClientRect',
-                boundingClientRect
-              )
-              console.log(
-                '[McDebug][mousedown] boundingClientRect?.left',
-                boundingClientRect?.left
-              )
-              console.log(
-                '[McDebug][mousedown] boundingClientRect?.top',
-                boundingClientRect?.top
-              )
-              console.log(
-                '[McDebug][mousedown] stateRef.current.grabbedMouseOffsetX',
-                stateRef.current.grabbedMouseOffsetX
-              )
-              console.log(
-                '[McDebug][mousedown] stateRef.current.grabbedMouseOffsetY',
-                stateRef.current.grabbedMouseOffsetY
-              )
-              console.log(
-                '[McDebug][mousedown] stateRef.current.grabbedMouseX',
-                stateRef.current.grabbedMouseX
-              )
-              console.log(
-                '[McDebug][mousedown] stateRef.current.grabbedMouseY',
-                stateRef.current.grabbedMouseY
-              )
-            }
           })
         }
       })
@@ -762,8 +715,6 @@ const App = props => {
         (typeof stateRef?.current.grabbedTop === 'number' ||
           typeof stateRef?.current.grabbedBottom === 'number')
 
-      // console.log('[McDev][debug] mousemove currentEl', currentEl)
-      // console.log('[McDev][debug] condition', condition)
 
       if (condition) {
         // get difference between current mouse position and original mouse position
@@ -785,30 +736,7 @@ const App = props => {
         const newTop = top + y
         const newRight = right - x
         const newBottom = top - y
-
-        const debug = true
-
-        if (debug) {
-          console.log(
-            '[McDebug][onMouseMove] stateRef.current.grabbedMouseX',
-            stateRef.current.grabbedMouseX
-          )
-          console.log(
-            '[McDebug][onMouseMove] stateRef.current.grabbedMouseY',
-            stateRef.current.grabbedMouseY
-          )
-          console.log('[McDebug][onMouseMove] e.clientX', e.clientX)
-          console.log('[McDebug][onMouseMove] e.clientY', e.clientY)
-          console.log('[McDebug][onMouseMove] x', x)
-          console.log('[McDebug][onMouseMove] y', y)
-          console.log('[McDebug][onMouseMove] left', left)
-          console.log('[McDebug][onMouseMove] top', top)
-          console.log('[McDebug][onMouseMove] newLeft', newLeft)
-          console.log('[McDebug][onMouseMove] newTop', newTop)
-          console.log('[McDebug][onMouseMove] newRight', newRight)
-          console.log('[McDebug][onMouseMove] newBottom', newBottom)
-        }
-
+        
         // set new left and top
 
         // only set values that the element has as classes
@@ -922,12 +850,9 @@ const App = props => {
       const newX = stateRef.current?.scrollX || 0
       const newY = stateRef.current?.scrollY || 0
       
-      console.log('[McDev][newY]', newY)
-      console.log('[McDev][document.body.scrollHeight]', document.body.scrollHeight)
       
       // wait till body height greater than newY
       if (document.body.scrollHeight >= newY) {
-        console.log('[McDev][scrollTimeout] Scrolling to', newX, newY)
         setTimeout(() => {
           if (!stateRef.current?.disableScrollRestore) {
             window.scrollTo(newX, newY)
@@ -1004,7 +929,6 @@ const App = props => {
 
   React.useEffect(() => {
     // set up MDTsubscriber
-    console.log('[McDev] Setting up MDTsubscriber', window?.MDTsubscriber)
     window?.MDTsubscriber?.(Math.random())
 
     const interval = setInterval(() => {
