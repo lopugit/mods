@@ -301,29 +301,80 @@ const App = (props) => {
   window.McLog = log;
   window.Mclog = log;
 
-  const mcdControl = window?.Switchboard?.dataSources?.['mcd-control.csv'] || [];
-  const mcdPos6 = window?.Switchboard?.dataSources?.['mcd-pos6.xml.csv'] || [];
-  const mcdTextDb = window?.Switchboard?.dataSources?.['mcd-text-db.csv'] || [];
+  const mcdControl = (window?.Switchboard?.dataSources?.['mcd-control.csv'] || [])?.map((item) => {
+    const ret = {
+      ...item,
+      source: 'mcd-control.csv'
+    };
+
+    for (let key in ret) {
+      if (key?.startsWith?.('col_')) {
+        delete ret[key];
+      }
+    }
+    return ret;
+  });
+  const mcdPos6 = (window?.Switchboard?.dataSources?.['mcd-pos6.xml.csv'] || [])?.map((item) => {
+    const ret = {
+      ...item,
+      source: 'mcd-pos6.xml.csv'
+    };
+
+    for (let key in ret) {
+      if (key?.startsWith?.('col_')) {
+        delete ret[key];
+      }
+    }
+    return ret;
+  });
+  const mcdTextDb = (window?.Switchboard?.dataSources?.['mcd-text-db.csv'] || [])?.map((item) => {
+    const ret = {
+      ...item,
+      source: 'mcd-text-db.csv'
+    };
+
+    for (let key in ret) {
+      if (key?.startsWith?.('col_')) {
+        delete ret[key];
+      }
+    }
+    return ret;
+  });
+
+  const merged = React.useMemo(() => {
+    const main = mcdControl?.map?.((item) => {
+      return {
+        ...item
+      };
+    });
+
+    const posAdded = main?.map?.((item) => {
+      const posItem = mcdPos6?.find?.(
+        (posItem) => posItem?.['Product Code'] === item?.['Product Code'] && posItem?.Language?.includes(state.__country)
+      );
+      return {
+        ...item,
+        pos: {
+          ...posItem
+        },
+        source: 'Merged'
+      };
+    });
+
+    return posAdded;
+  });
 
   window.mcdControl = mcdControl;
   window.mcdPos6 = mcdPos6;
   window.mcdTextDb = mcdTextDb;
 
   const searchDb = React.useMemo(() => {
-    const data = [...mcdControl, ...mcdPos6, mcdTextDb];
+    // const data = [...mcdControl, ...mcdPos6, mcdTextDb];
+    const data = [...merged];
 
-    const mappedData = data?.map?.((d) => {
-      // delete any col_X keys
-      const d2 = { ...d };
-      for (let key in d2) {
-        if (key?.startsWith?.('col_')) {
-          delete d2[key];
-        }
-      }
-      return d2;
-    });
-
-    return new Fuse(mappedData, {
+    // include score
+    return new Fuse(data, {
+      includeScore: true,
       keys: [
         {
           name: 'Actual Name',
@@ -345,8 +396,24 @@ const App = (props) => {
   const searchSwitchboard = (string) => {
     searchRef.current.search = false;
     try {
-      const results = searchDb?.search?.(string);
-      const resultsLimited = results instanceof Array ? results?.slice?.(0, 10) : ['none'];
+      const strings = string?.split?.('|');
+      const results = strings?.map((string) => {
+        // trim start and end
+        const strippedString = string?.trim();
+        return (
+          searchDb?.search?.(strippedString)?.map((result) => ({ ...result, string: strippedString })) || [
+            {
+              'Actual Name': 'none',
+              string: strippedString
+            }
+          ]
+        );
+      });
+
+      const flattedResults = results?.flat?.();
+      const sortedResults = flattedResults?.sort?.((a, b) => a?.score - b?.score);
+
+      const resultsLimited = sortedResults instanceof Array ? sortedResults?.slice?.(0, 50) : ['none'];
       if (!resultsLimited || resultsLimited == 0) {
         setSearchResults(null);
       } else {
@@ -1500,6 +1567,7 @@ const App = (props) => {
                 outline="none !important"
                 px={8}
                 py={16}
+                type="search"
                 color="black"
                 borderRadius={12}
                 fontWeight="normal"
