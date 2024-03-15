@@ -1453,6 +1453,7 @@ const App = (props) => {
         left={0}
         bottom={0}
         right={0}
+        pointerEvents="none"
         // bg="rgba(0,0,0,0.2)"
       >
         <Box w="100%" h="100%" position="relative">
@@ -1476,6 +1477,7 @@ const App = (props) => {
             maxH={(window.outerHeight * 0.8) / scaleRef.current + 'px'}
             borderRadius="16px"
             bg="#DD2514"
+            pointerEvents="all"
             transformOrigin="bottom right"
           >
             {!state?.open && <Box width="60px" height="56px"></Box>}
