@@ -525,6 +525,44 @@ const App = (props) => {
     return 'Error';
   };
 
+  const onStateChange = (state) => {
+    const lastKey = lastKeyRef.current;
+
+    if (!['__horizontal', '__vertical']?.includes(lastKey) && state?.__allOrientations === true) {
+      if (state?.__horizontal !== true) {
+        set('__horizontal', true);
+      }
+      if (state?.__vertical !== true) {
+        set('__vertical', true);
+      }
+    } else if ([['__horizontal', '__vertical']]?.includes(lastKey)) {
+      if (lastKey === '__horizontal') {
+        set(['__vertical', '__allOrientations'], !state?.__horizontal);
+      } else if (lastKey === '__vertical') {
+        set(['__horizontal', '__allOrientations'], !state?.__vertical);
+      }
+    }
+  };
+
+  const lockVideos = () => {
+    if (typeof stateRef.current?.__lockVideo === 'number') {
+      // get all html videos and lock at seconds specified by lockVideo
+      const videos = document.querySelectorAll('video');
+
+      videos?.forEach?.((video) => {
+        // if video loaded
+        if (video.readyState === 4) {
+          // set loop false
+          video.loop = false;
+
+          // stop video playing
+          video.pause();
+          video.currentTime = stateRef.current?.__lockVideo;
+        }
+      });
+    }
+  };
+
   // watch state
   React.useEffect(() => {
     stateRef.current = state;
@@ -563,23 +601,18 @@ const App = (props) => {
 
     setOldState(state);
 
-    const lastKey = lastKeyRef.current;
-
-    if (!['__horizontal', '__vertical']?.includes(lastKey) && state?.__allOrientations === true) {
-      if (state?.__horizontal !== true) {
-        set('__horizontal', true);
-      }
-      if (state?.__vertical !== true) {
-        set('__vertical', true);
-      }
-    } else if ([['__horizontal', '__vertical']]?.includes(lastKey)) {
-      if (lastKey === '__horizontal') {
-        set(['__vertical', '__allOrientations'], !state?.__horizontal);
-      } else if (lastKey === '__vertical') {
-        set(['__horizontal', '__allOrientations'], !state?.__vertical);
-      }
-    }
+    onStateChange(state);
   }, [state, stateKey]);
+
+  React.useEffect(() => {
+    onStateChange(state);
+
+    const interval = setInterval(() => {
+      lockVideos();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const iframePadding = 0;
 
@@ -1219,6 +1252,16 @@ const App = (props) => {
       '__NotBreakfast'
     ],
     Screens: ['__screen_no', '__no_of_screens', '__startingScreen', '__screenRange', '__minScreens', '__maxScreens'],
+    Presell: [
+      {
+        key: '__lockVideo',
+        note: "Lock's all videos at this timestamp in seconds"
+      },
+      {
+        key: '__presellIndex',
+        note: 'Filteres presell videos to only show either an index by number or where video filenames contain this value eg. 189_19_DT_Summer_2023_SoftServe_Presell_09s_10'
+      }
+    ],
     'Creme Brulle': ['__35221', '__35222', '__35223'],
     'Big Breakfast Deal': ['__big-breakfast-deal', '__10032'],
 
