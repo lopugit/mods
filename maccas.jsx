@@ -234,6 +234,7 @@ const App = (props) => {
 
   const copyWithNotification = (string) => {
     try {
+      const navigator = window.navigator;
       navigator.clipboard.writeText(string);
       set('copiedText', string);
       set('copied', true);
@@ -1344,6 +1345,7 @@ const App = (props) => {
     ],
     'Merch LCM 💰🪙': [
       '__merch-LCM-trial-subtle',
+      '__merch-LCM-trial-overt',
       '__merch-LCM-trial-vic',
       '__merch-LCM-trial-thornleigh',
       { key: '', note: 'Applicable new RFMs/trials' },
@@ -1400,6 +1402,26 @@ const App = (props) => {
           h2: {
             '&.text-shadow-router': {
               opacity: state?.screenNames ? 1 : 0.35
+            }
+          },
+          '.screen': {
+            overflow: 'visible'
+          },
+          '.bank-of': {
+            bg: 'orange',
+            '&::after': {
+              ...(state?.screenBorders
+                ? {
+                    borderRight: '1px solid rgba(0,0,0,0.3)',
+                    position: 'absolute',
+                    content: '""',
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: '1px',
+                    zIndex: 999999999
+                  }
+                : {})
             }
           },
           '.figma-preview': {
@@ -2015,6 +2037,42 @@ const App = (props) => {
                 opacity={state?.dt_mode ? 1 : 0.45}
               >
                 🚘
+              </Box>
+
+              {/* toggle screenBorders */}
+              <Box
+                mr={32}
+                opacity={state?.screenBorders ? 1 : 0.45}
+                onClick={() => {
+                  set('screenBorders', !state?.screenBorders);
+                }}
+                title="Toggle Screen Borders"
+              >
+                🫥
+              </Box>
+
+              {/* Toggle refreshing on change */}
+
+              <Box
+                mr={32}
+                opacity={state?.refresh ? 1 : 0.45}
+                onClick={() => {
+                  set('refresh', !state?.refresh);
+                }}
+                title="Toggle Refresh on Change"
+              >
+                🌀
+              </Box>
+
+              <Box
+                mr={32}
+                // opacity={state?.refresh ? 1 : 0.45}
+                onClick={() => {
+                  window.location.reload();
+                }}
+                title="Refresh NOW"
+              >
+                🌊
               </Box>
 
               <Box mr={32} title="Toggle Figma Previews">
