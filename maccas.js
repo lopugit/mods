@@ -3,8 +3,8 @@ try {
 
   const allScripts = document.querySelectorAll('script');
 
-  const injectedScriptSrc = Array.from(allScripts).find((script) => script.src?.includes('maccas.js'));
-  const prod = injectedScriptSrc?.src?.includes('jsdelivr');
+  const injectedScriptSrc = Array.from(allScripts).find((script) => script.src.includes('maccas.js'));
+  const prod = injectedScriptSrc.src.includes('jsdelivr');
 
   if (prod) {
     const version = injectedScriptSrc.src.split('@')[1].split('/')[0];
@@ -16,7 +16,7 @@ try {
   (async () => {
     const href = window.location.href;
 
-    if (href?.includes('mdt=true')) {
+    if (href.includes('mdt=true')) {
       let success = false;
 
       try {
@@ -98,7 +98,7 @@ try {
             window.debounce = debounce
             
             import * as Fuse from "https://esm.sh/fuse.js@6";
-            window.Fuse = Fuse?.default
+            window.Fuse = Fuse.default
             
             import * as Emotion from 'https://esm.sh/@emotion/react@11.11.3';
             window.Emotion = Emotion          
