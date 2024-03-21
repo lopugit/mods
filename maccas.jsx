@@ -178,8 +178,11 @@ const App = (props) => {
     // poll localStorage for changes
     if (state?.iframeMode) {
       const interval = setInterval(() => {
-        console.log('[McDev] Running interval 1');
-
+        window.intervalCount = window.intervalCount || 1;
+        window.intervalCount++;
+        if (window?.intervalLogging) {
+          console.log('[McDev] Running interval 1');
+        }
         const stateString = window.localStorage.getItem(stateKey);
 
         if (stateString !== oldStateStringRef?.current) {
@@ -616,8 +619,11 @@ const App = (props) => {
 
     if (typeof state?.lockVideo === 'number') {
       const interval = setInterval(() => {
-        console.log('[McDev] Running interval 2');
-
+        window.intervalCount = window.intervalCount || 1;
+        window.intervalCount++;
+        if (window?.intervalLogging) {
+          console.log('[McDev] Running interval 2');
+        }
         lockVideos();
       }, 1000);
       return () => clearInterval(interval);
@@ -729,8 +735,11 @@ const App = (props) => {
   // poll to add adjustment to elements with class .mdt-position
   React.useEffect(() => {
     const interval = setInterval(() => {
-      console.log('[McDev] Running interval 3');
-
+      window.intervalCount = window.intervalCount || 1;
+      window.intervalCount++;
+      if (window?.intervalLogging) {
+        console.log('[McDev] Running interval 3');
+      }
       const title = document.title?.replace('McDev - ', '')?.replace('Maccas DMB - ', '');
       if (title !== pageTitleRef?.current) {
         if (title?.includes?.('/')) {
@@ -950,7 +959,11 @@ const App = (props) => {
 
     // scroll to saved position on refresh
     let inter = setInterval(() => {
-      console.log('[McDev] Running interval 4');
+      window.intervalCount = window.intervalCount || 1;
+      window.intervalCount++;
+      if (window?.intervalLogging) {
+        console.log('[McDev] Running interval 4');
+      }
 
       const newX = stateRef.current?.scrollX || 0;
       const newY = stateRef.current?.scrollY || 0;
