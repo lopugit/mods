@@ -40,7 +40,8 @@ const refreshable = [
 
 const noRefresh = [
   // '__daypart',
-  '__area'
+  '__area',
+  '__refresh'
 ];
 
 let stateInitialised = false;
@@ -503,7 +504,7 @@ const App = (props) => {
     clearTimeout(refreshRef.current?.timeout);
 
     refreshRef.current.timeout = setTimeout(() => {
-      if (stateRef.current?.refresh !== false) {
+      if (stateRef.current?.__refresh !== false) {
         window.location.reload();
       }
     }, 1000);
@@ -1399,8 +1400,6 @@ const App = (props) => {
     let timeout;
 
     const onKeydown = (e) => {
-      console.log('nik keys', e?.key, e?.ctrlKey, e?.metaKey);
-
       const zoomOut = e?.key === '=' && (e?.ctrlKey || e?.metaKey);
       const zoomIn = e?.key === '-' && (e?.ctrlKey || e?.metaKey);
       if (zoomOut || zoomIn) {
@@ -1953,7 +1952,7 @@ const App = (props) => {
               {/* Toggle visibility of debug pull */}
 
               <Box
-                mr={32}
+                mr={64}
                 opacity={state?.showDebugPill ? 1 : 0.45}
                 onClick={() => {
                   set('showDebugPill', !state?.showDebugPill);
@@ -1963,9 +1962,33 @@ const App = (props) => {
                 🪲
               </Box>
 
+              {/* Toggle all dayparts */}
+
+              <Box
+                mr={32}
+                opacity={state?.__allDayparts ? 1 : 0.45}
+                onClick={() => {
+                  set('__allDayparts', !state?.__allDayparts);
+                }}
+                title="Toggle All Dayparts"
+              >
+                🕰️
+              </Box>
+
+              {/* Reset Dayparts */}
+
+              <Box
+                mr={32}
+                onClick={() => {
+                  set(['__Breakfast', '__MTea', '__Lunch', '__ATea', '__Dinner', '__LateNight', '__Overnight', '__NotBreakfast'], false);
+                }}
+                title="Reset Dayparts"
+              >
+                🌅
+              </Box>
+
               {/* Toggle showing of all daypart's */}
               <Box
-                ml={24}
                 mr={32}
                 opacity={state?.showAllDayparts ? 1 : 0.45}
                 onClick={() => {
@@ -1973,7 +1996,22 @@ const App = (props) => {
                 }}
                 title="Toggle Showing of All Time's for this Location"
               >
-                ⏰
+                ⊟
+              </Box>
+
+              {/* Play next video of window.videoPlayers[uid] keys */}
+
+              <Box
+                mr={32}
+                onClick={() => {
+                  const videoPlayers = window?.videoPlayers;
+                  Object.values(videoPlayers)?.forEach((player) => {
+                    player?.();
+                  });
+                }}
+                title="Play Next Video"
+              >
+                ⏩
               </Box>
 
               {/* Toggle drag and drop position */}
@@ -2086,9 +2124,9 @@ const App = (props) => {
 
               <Box
                 mr={32}
-                opacity={state?.refresh ? 1 : 0.45}
+                opacity={state?.__refresh ? 1 : 0.45}
                 onClick={() => {
-                  set('refresh', !state?.refresh);
+                  set('__refresh', !state?.__refresh);
                 }}
                 title="Toggle Refresh on Change"
               >
