@@ -1,5 +1,5 @@
 try {
-  window.MDT = window?.MDT || {};
+  window.MDT = window.MDT || {};
 
   const allScripts = document.querySelectorAll('script');
 

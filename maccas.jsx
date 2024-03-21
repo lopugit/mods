@@ -121,7 +121,11 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
 // if it exists
 const initialStateKey = new URLSearchParams(window.location.search).get('__stateKey');
 
+window.mcdevRenderCount = 0;
+
 const App = (props) => {
+  mcdevRenderCount++;
+
   const location = useLocation();
 
   // const [stateKey, setStateKey] = React.useState(initialStateKey ? initialStateKey : '')
@@ -174,6 +178,8 @@ const App = (props) => {
     // poll localStorage for changes
     if (state?.iframeMode) {
       const interval = setInterval(() => {
+        console.log('[McDev] Running interval 1');
+
         const stateString = window.localStorage.getItem(stateKey);
 
         if (stateString !== oldStateStringRef?.current) {
@@ -608,11 +614,14 @@ const App = (props) => {
   React.useEffect(() => {
     onStateChange(state);
 
-    const interval = setInterval(() => {
-      lockVideos();
-    }, 1000);
+    if (typeof state?.lockVideo === 'number') {
+      const interval = setInterval(() => {
+        console.log('[McDev] Running interval 2');
 
-    return () => clearInterval(interval);
+        lockVideos();
+      }, 1000);
+      return () => clearInterval(interval);
+    }
   }, []);
 
   const iframePadding = 0;
@@ -720,6 +729,8 @@ const App = (props) => {
   // poll to add adjustment to elements with class .mdt-position
   React.useEffect(() => {
     const interval = setInterval(() => {
+      console.log('[McDev] Running interval 3');
+
       const title = document.title?.replace('McDev - ', '')?.replace('Maccas DMB - ', '');
       if (title !== pageTitleRef?.current) {
         if (title?.includes?.('/')) {
@@ -733,10 +744,13 @@ const App = (props) => {
 
       const all = document.querySelectorAll('.mdt-position');
 
+      let allHaveMdt = true;
+
       all?.forEach((el) => {
         // if el doesn't have a click event listener
         // add one that allows dragging the position via changing style.left and style.top
         if (!el?.__mdt) {
+          allHaveMdt = false;
           el.__mdt = true;
 
           // on click set grabbedEl to this element
@@ -813,6 +827,10 @@ const App = (props) => {
           });
         }
       });
+
+      if (allHaveMdt) {
+        clearInterval(interval);
+      }
     }, 2000);
 
     const onMouseMove = (e) => {
@@ -932,6 +950,8 @@ const App = (props) => {
 
     // scroll to saved position on refresh
     let inter = setInterval(() => {
+      console.log('[McDev] Running interval 4');
+
       const newX = stateRef.current?.scrollX || 0;
       const newY = stateRef.current?.scrollY || 0;
 
@@ -1009,6 +1029,8 @@ const App = (props) => {
     window?.MDTsubscriber?.(Math.random());
 
     const interval = setInterval(() => {
+      console.log('[McDev] Running interval 5');
+
       const mdtPositionEls = document.querySelectorAll('.mdt-position');
       if (mdtPositionEls?.length !== mdtPositionElsRef?.current?.length) {
         setMdtPositionEls(mdtPositionEls);
@@ -1374,12 +1396,26 @@ const App = (props) => {
 
   // listen for devicePixelRatio change and trigger re-render
   React.useEffect(() => {
-    const interval = setInterval(() => {
-      if (window?.devicePixelRatio !== window?.prevDevicePixelRatio) {
-        window.prevDevicePixelRatio = window?.devicePixelRatio;
-        setDevicePixelRatio(window?.devicePixelRatio);
+    // Listen for ctrl/cmd -/+ zoom in/out and change devicePixelRatio
+
+    const onKeydown = (e) => {
+      if (e?.key === '-' && (e?.ctrlKey || e?.metaKey)) {
+        setDevicePixelRatio(devicePixelRatio - 0.1);
+      } else if (e?.key === '=' && (e?.ctrlKey || e?.metaKey)) {
+        setDevicePixelRatio(devicePixelRatio + 0.1);
       }
-    }, 50);
+    };
+
+    document.addEventListener('keydown', onKeydown);
+
+    // const interval = setInterval(() => {
+    //   console.log('[McDev] Running interval 6');
+
+    //   if (window?.devicePixelRatio !== window?.prevDevicePixelRatio) {
+    //     window.prevDevicePixelRatio = window?.devicePixelRatio;
+    //     setDevicePixelRatio(window?.devicePixelRatio);
+    //   }
+    // }, 2000);
 
     return () => clearInterval(interval);
   }, []);
