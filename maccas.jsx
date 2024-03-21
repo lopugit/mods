@@ -981,9 +981,6 @@ const App = (props) => {
     };
   }, []);
 
-  const [mdtPositionEls, setMdtPositionEls] = React.useState([]);
-  const mdtPositionElsRef = React.useRef(mdtPositionEls);
-
   const [elScale, setElScale] = React.useState(1);
 
   React.useEffect(() => {
@@ -1027,18 +1024,6 @@ const App = (props) => {
   React.useEffect(() => {
     // set up MDTsubscriber
     window?.MDTsubscriber?.(Math.random());
-
-    const interval = setInterval(() => {
-      console.log('[McDev] Running interval 5');
-
-      const mdtPositionEls = document.querySelectorAll('.mdt-position');
-      if (mdtPositionEls?.length !== mdtPositionElsRef?.current?.length) {
-        setMdtPositionEls(mdtPositionEls);
-        mdtPositionElsRef.current = mdtPositionEls;
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
   }, []);
 
   const [imgLoading, setImgLoading] = React.useState(false);
@@ -1398,24 +1383,22 @@ const App = (props) => {
   React.useEffect(() => {
     // Listen for ctrl/cmd -/+ zoom in/out and change devicePixelRatio
 
+    let timeout;
+
     const onKeydown = (e) => {
-      if (e?.key === '-' && (e?.ctrlKey || e?.metaKey)) {
-        setDevicePixelRatio(devicePixelRatio - 0.1);
-      } else if (e?.key === '=' && (e?.ctrlKey || e?.metaKey)) {
-        setDevicePixelRatio(devicePixelRatio + 0.1);
+      console.log('nik keys', e?.key, e?.ctrlKey, e?.metaKey);
+
+      const zoomOut = e?.key === '=' && (e?.ctrlKey || e?.metaKey);
+      const zoomIn = e?.key === '-' && (e?.ctrlKey || e?.metaKey);
+      if (zoomOut || zoomIn) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          setDevicePixelRatio(window?.devicePixelRatio);
+        }, 100);
       }
     };
 
     document.addEventListener('keydown', onKeydown);
-
-    // const interval = setInterval(() => {
-    //   console.log('[McDev] Running interval 6');
-
-    //   if (window?.devicePixelRatio !== window?.prevDevicePixelRatio) {
-    //     window.prevDevicePixelRatio = window?.devicePixelRatio;
-    //     setDevicePixelRatio(window?.devicePixelRatio);
-    //   }
-    // }, 2000);
 
     return () => clearInterval(interval);
   }, []);
@@ -1473,10 +1456,9 @@ const App = (props) => {
             pointerEvents: 'none'
           },
           '#root *': {
-            ...(state?.mdtPosition &&
-              mdtPositionEls?.length && {
-                pointerEvents: 'none'
-              })
+            ...(state?.mdtPosition && {
+              pointerEvents: 'none'
+            })
           },
           '#root .mdt-child *': {
             pointerEvents: 'all !important'
