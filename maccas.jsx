@@ -212,6 +212,9 @@ const App = (props) => {
       const newState = {};
       key?.forEach((key, i) => {
         newState[key] = value instanceof Array ? value[i] : value;
+        if (key?.startsWith('__')) {
+          newState[key?.replace('__', '')] = value instanceof Array ? value[i] : value;
+        }
       });
       setState((state) => {
         return Object.assign({}, state, newState);
@@ -219,6 +222,10 @@ const App = (props) => {
       }, 1);
     } else {
       setState((state) => {
+        if (key?.startsWith('__')) {
+          return Object.assign({}, state, { [key?.replace('__', '')]: value, [key]: value });
+        }
+
         return Object.assign({}, state, { [key]: value });
         return { ...state, [key]: value };
       }, 2);
@@ -1262,8 +1269,10 @@ const App = (props) => {
     Orientation: ['__allOrientations', '__horizontal', '__vertical'],
     Dayparts: [
       '__time',
+      '__multiView',
+      '__area',
+      '__daypart',
       '__allDayparts',
-      '__showAllDayparts',
       '__Breakfast',
       '__MTea',
       '__Lunch',
@@ -1987,20 +1996,19 @@ const App = (props) => {
                 🌅
               </Box>
 
-              {/* Toggle showing of all daypart's */}
+              {/* Toggle Multi View which is where you see titles and multiple screens */}
               <Box
                 mr={32}
-                opacity={state?.showAllDayparts ? 1 : 0.45}
+                opacity={state?.__multiView ? 1 : 0.45}
                 onClick={() => {
-                  set('showAllDayparts', !state?.showAllDayparts);
+                  set('__multiView', !state?.__multiView);
                 }}
-                title="Toggle Showing of All Time's for this Location"
+                title="Toggle Multi View"
               >
                 ⊟
               </Box>
 
               {/* Play next video of window.videoPlayers[uid] keys */}
-
               <Box
                 mr={32}
                 onClick={() => {
