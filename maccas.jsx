@@ -2043,9 +2043,13 @@ const App = (props) => {
               <Box
                 mr={32}
                 onClick={() => {
-                  const videoPlayers = window?.videoPlayers;
+                  const videoPlayers = window?.videoPlayers || {};
                   Object.values(videoPlayers)?.forEach((player) => {
                     player?.();
+                  });
+                  const carouselNexts = window?.carouselNexts || {};
+                  Object.values(carouselNexts)?.forEach((carouselNext) => {
+                    carouselNext?.();
                   });
                 }}
                 title="Play Next Video"
