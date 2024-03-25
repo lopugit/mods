@@ -1971,6 +1971,34 @@ const App = (props) => {
                 🪲
               </Box>
 
+              {/* Toggle all screen numbers */}
+
+              <Box
+                mr={32}
+                opacity={state?.__minScreens === 3 && state?.__maxScreens === 6 && state?.__startingScreen === 1 ? 1 : 0.45}
+                onClick={() => {
+                  set('__minScreens', 3);
+                  set('__maxScreens', 6);
+                  set('__startingScreen', 1);
+                }}
+                title="Toggle All Screen Numbers"
+              >
+                ⊞
+              </Box>
+
+              {/* Toggle all orientations */}
+
+              <Box
+                mr={32}
+                opacity={state?.__allOrientations ? 1 : 0.45}
+                onClick={() => {
+                  set('__allOrientations', !state?.__allOrientations);
+                }}
+                title="Toggle All Orientations"
+              >
+                🫨
+              </Box>
+
               {/* Toggle all dayparts */}
 
               <Box
@@ -1989,7 +2017,10 @@ const App = (props) => {
               <Box
                 mr={32}
                 onClick={() => {
-                  set(['__Breakfast', '__MTea', '__Lunch', '__ATea', '__Dinner', '__LateNight', '__Overnight', '__NotBreakfast'], false);
+                  set(
+                    ['__Breakfast', '__MTea', '__Lunch', '__ATea', '__Dinner', '__LateNight', '__Overnight', '__NotBreakfast', '__allDayparts'],
+                    false
+                  );
                 }}
                 title="Reset Dayparts"
               >
