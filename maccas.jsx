@@ -1436,6 +1436,10 @@ const App = (props) => {
           body: {
             paddingBottom: '50vh !important'
           },
+          '#webpack-dev-server-client-overlay': {
+            transform: `scale(${newScale})`,
+            transformOrigin: '0 0'
+          },
           '.debug-speech-bubble': {
             opacity: state?.showDebugPill ? 1 : 0
           },
