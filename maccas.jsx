@@ -893,6 +893,7 @@ const App = (props) => {
         ) {
           console.log('nik wait what', newLeft, newTop, newRight, newBottom);
 
+          currentEl.style.left = newLeft + 'px';
           currentEl.style.setProperty('left', newLeft + 'px', 'important');
         }
 
@@ -902,10 +903,12 @@ const App = (props) => {
           className?.includes?.(' !right-') ||
           className?.startsWith('!right-')
         ) {
+          currentEl.style.right = newRight + 'px';
           currentEl.style.setProperty('right', newRight + 'px', 'important');
         }
 
         if (className?.includes?.(' top-') || className?.startsWith('top-') || className?.includes?.(' !top-') || className?.startsWith('!top-')) {
+          currentEl.style.top = newTop + 'px';
           currentEl.style.setProperty('top', newTop + 'px', 'important');
         }
 
@@ -915,6 +918,7 @@ const App = (props) => {
           className?.includes?.(' !bottom-') ||
           className?.startsWith('!bottom-')
         ) {
+          currentEl.style.bottom = newBottom + 'px';
           currentEl.style.setProperty('bottom', newBottom + 'px', 'important');
         }
 
@@ -940,19 +944,34 @@ const App = (props) => {
 
         const tw = stateRef?.current?.tailwindStyling;
 
-        if (className?.includes?.(' left-') || className?.startsWith('left-')) {
+        if (
+          className?.includes?.(' left-') ||
+          className?.startsWith('left-') ||
+          className?.includes?.(' !left-') ||
+          className?.startsWith('!left-')
+        ) {
           string += tw ? `left-[${newLeft}px] ` : `left: "${newLeft}px",`;
         }
 
-        if (className?.includes?.(' right-') || className?.startsWith('right-')) {
+        if (
+          className?.includes?.(' right-') ||
+          className?.startsWith('right-') ||
+          className?.includes?.(' !right-') ||
+          className?.startsWith('!right-')
+        ) {
           string += tw ? `right-[${newRight}px] ` : `right: "${newRight}px",`;
         }
 
-        if (className?.includes?.(' top-') || className?.startsWith('top-')) {
+        if (className?.includes?.(' top-') || className?.startsWith('top-') || className?.includes?.(' !top-') || className?.startsWith('!top-')) {
           string += tw ? `top-[${newTop}px] ` : `top: "${newTop}px",`;
         }
 
-        if (className?.includes?.(' bottom-') || className?.startsWith('bottom-')) {
+        if (
+          className?.includes?.(' bottom-') ||
+          className?.startsWith('bottom-') ||
+          className?.includes?.(' !bottom-') ||
+          className?.startsWith('!bottom-')
+        ) {
           string += tw ? `bottom-[${newBottom}px] ` : `bottom: "${newBottom}px",`;
         }
 
