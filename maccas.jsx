@@ -885,20 +885,37 @@ const App = (props) => {
 
         const className = currentEl?.className;
 
-        if (className?.includes?.(' left-') || className?.startsWith('left-')) {
-          currentEl.style.left = newLeft + 'px';
+        if (
+          className?.includes?.(' left-') ||
+          className?.startsWith('left-') ||
+          className?.includes?.(' !left-') ||
+          className?.startsWith('!left-')
+        ) {
+          console.log('nik wait what', newLeft, newTop, newRight, newBottom);
+
+          currentEl.style.setProperty('left', newLeft + 'px', 'important');
         }
 
-        if (className?.includes?.(' right-') || className?.startsWith('right-')) {
-          currentEl.style.right = newRight + 'px';
+        if (
+          className?.includes?.(' right-') ||
+          className?.startsWith('right-') ||
+          className?.includes?.(' !right-') ||
+          className?.startsWith('!right-')
+        ) {
+          currentEl.style.setProperty('right', newRight + 'px', 'important');
         }
 
-        if (className?.includes?.(' top-') || className?.startsWith('top-')) {
-          currentEl.style.top = newTop + 'px';
+        if (className?.includes?.(' top-') || className?.startsWith('top-') || className?.includes?.(' !top-') || className?.startsWith('!top-')) {
+          currentEl.style.setProperty('top', newTop + 'px', 'important');
         }
 
-        if (className?.includes?.(' bottom-') || className?.startsWith('bottom-')) {
-          currentEl.style.bottom = newBottom + 'px';
+        if (
+          className?.includes?.(' bottom-') ||
+          className?.startsWith('bottom-') ||
+          className?.includes?.(' !bottom-') ||
+          className?.startsWith('!bottom-')
+        ) {
+          currentEl.style.setProperty('bottom', newBottom + 'px', 'important');
         }
 
         stateRef.current.currentGrabbedLeft = newLeft;
