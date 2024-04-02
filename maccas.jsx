@@ -2004,7 +2004,10 @@ const App = (props) => {
                 mr={64}
                 opacity={state?.showDebugPill ? 1 : 0.45}
                 onClick={() => {
-                  set('showDebugPill', !state?.showDebugPill);
+                  const newVal = !state?.showDebugPill;
+                  set('showDebugPill', newVal);
+                  set('_debugView', newVal);
+                  set('__debugView', newVal);
                 }}
                 title="Toggle Debug Pill"
               >
@@ -2131,7 +2134,14 @@ const App = (props) => {
                 mr={32}
                 opacity={state?.__foodcourt ? 1 : 0.45}
                 onClick={() => {
-                  set('__foodcourt', !state?.__foodcourt);
+                  const newVal = !state?.__foodcourt;
+
+                  set('__foodcourt', newVal);
+
+                  if (newVal) {
+                    set('dt_mode', false);
+                    set('__inspiration', false);
+                  }
                 }}
                 title="Toggle Foodcourt Mode"
               >
@@ -2148,6 +2158,7 @@ const App = (props) => {
                   // set drive thru mode to false because it breaks inspiration view
                   if (newVal) {
                     set('dt_mode', false);
+                    set('__foodcourt', false);
                   }
                 }}
                 title="Toggle Inspiration Mode"
