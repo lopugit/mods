@@ -31,22 +31,7 @@ const { Global } = Emotion;
 
 const { createBrowserRouter, RouterProvider, useLocation } = ReactRouterDom;
 
-const refreshable = [
-  '__inspiration',
-  '__orientation',
-  // match anything that starts with __
-  /^__.*/
-];
-
-const noRefresh = [
-  // '__daypart',
-  '__area',
-  '__refresh'
-];
-
 let stateInitialised = false;
-
-const ignoreInIframe = ['figmaPreview'];
 
 try {
   // overwrite console log so McDev can output messages
@@ -122,10 +107,10 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
 // if it exists
 const initialStateKey = new URLSearchParams(window.location.search).get('__stateKey');
 
-window.mcdevRenderCount = 0;
+window.templateRenderCount = 0;
 
 const App = (props) => {
-  mcdevRenderCount++;
+  templateRenderCount++;
 
   const location = useLocation();
 
@@ -133,7 +118,7 @@ const App = (props) => {
   const [stateKey, setStateKey] = React.useState('');
 
   const stateString = React.useMemo(() => {
-    return localStorage.getItem('maccas-dev-tools' + stateKey);
+    return localStorage.getItem('mods-template-script' + stateKey);
   }, []);
 
   const cachedState = React.useMemo(() => {
@@ -167,39 +152,13 @@ const App = (props) => {
     });
 
     try {
-      window?.MDTsubscriber?.(Math.random());
+      window?.modsTemplateSubscriber?.(Math.random());
     } catch (err) {
-      console.error('[McDev] Error calling MDTsubscriber', err);
+      console.error('[McDev] Error calling modsTemplateSubscriber', err);
     }
   };
 
   const oldStateStringRef = React.useRef(stateString);
-
-  React.useEffect(() => {
-    // poll localStorage for changes
-    if (state?.iframeMode) {
-      const interval = setInterval(() => {
-        window.intervalCount = window.intervalCount || 1;
-        window.intervalCount++;
-        if (window?.intervalLogging) {
-          console.log('[McDev] Running interval 1');
-        }
-        const stateString = window.localStorage.getItem(stateKey);
-
-        if (stateString !== oldStateStringRef?.current) {
-          oldStateStringRef.current = stateString;
-          try {
-            const newState = initialiseStateFromParams(JSON.parse(stateString), location, true);
-            setState(newState, 7);
-          } catch {
-            console.error('Error parsing cached state');
-          }
-        }
-      }, 500);
-
-      return () => clearInterval(interval);
-    }
-  }, []);
 
   const lastKeyRef = React.useRef('');
 
@@ -589,7 +548,7 @@ const App = (props) => {
       const stringifiedState = JSON.stringify(state);
       oldStateStringRef.current = stringifiedState;
       if (stringifiedState && stringifiedState !== 'undefined') {
-        window.localStorage.setItem('maccas-dev-tools' + stateKey, stringifiedState);
+        window.localStorage.setItem('mod-template-script' + stateKey, stringifiedState);
       } else {
         console.error('Error setting localStorage because stringifiedState was undefined');
       }
@@ -1079,8 +1038,8 @@ const App = (props) => {
   }, [elScale]);
 
   React.useEffect(() => {
-    // set up MDTsubscriber
-    window?.MDTsubscriber?.(Math.random());
+    // set up modsTemplateSubscriber
+    window?.modsTemplateSubscriber?.(Math.random());
   }, []);
 
   const [imgLoading, setImgLoading] = React.useState(false);
@@ -2017,19 +1976,8 @@ const App = (props) => {
                 🪲
               </Box>
 
-              {/* Toggle Multi View which is where you see titles and multiple screens */}
-              <Box
-                mr={32}
-                opacity={state?.__multiView ? 1 : 0.45}
-                onClick={() => {
-                  set('__multiView', !state?.__multiView);
-                }}
-                title="Toggle Multi View"
-              >
-                🌈
-              </Box>
+              {/* Toggle all screen numbers */}
 
-              {/* Show all screen sets */}
               <Box
                 mr={32}
                 opacity={state?.__minScreens === 3 && state?.__maxScreens === 6 && state?.__startingScreen === 1 ? 1 : 0.45}
@@ -2039,9 +1987,9 @@ const App = (props) => {
                   set('__startingScreen', 1);
                   set('__screenRange', 6);
                 }}
-                title="Show all screen sets"
+                title="Toggle All Screen Numbers"
               >
-                🔢
+                ⊞
               </Box>
 
               {/* Toggle all orientations */}
@@ -2096,6 +2044,18 @@ const App = (props) => {
                 title="Reset Dayparts"
               >
                 🌅
+              </Box>
+
+              {/* Toggle Multi View which is where you see titles and multiple screens */}
+              <Box
+                mr={32}
+                opacity={state?.__multiView ? 1 : 0.45}
+                onClick={() => {
+                  set('__multiView', !state?.__multiView);
+                }}
+                title="Toggle Multi View"
+              >
+                ⊟
               </Box>
 
               {/* Play next video of window.videoPlayers[uid] keys */}
@@ -2176,7 +2136,7 @@ const App = (props) => {
 
                   if (newVal) {
                     set('dt_mode', false);
-                    set('__inspiration', false);
+                    // set('__inspiration', false);
                   }
                 }}
                 title="Toggle Foodcourt Mode"
@@ -2194,7 +2154,7 @@ const App = (props) => {
                   // set drive thru mode to false because it breaks inspiration view
                   if (newVal) {
                     set('dt_mode', false);
-                    set('__foodcourt', false);
+                    // set('__foodcourt', false);
                   }
                 }}
                 title="Toggle Inspiration Mode"
@@ -2414,7 +2374,7 @@ const App = (props) => {
   );
 };
 
-const root = ReactDOM.createRoot(document.getElementById('maccas-dev-tools'));
+const root = ReactDOM.createRoot(document.getElementById('mod-template-script'));
 
 const router = createBrowserRouter([{ path: '*', element: <App /> }]);
 
