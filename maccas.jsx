@@ -319,10 +319,12 @@ const App = (props) => {
   window.McLog = log;
   window.Mclog = log;
 
-  const mcdControl = (window?.Switchboard?.dataSources?.['mcd-control.csv'] || [])?.map((item) => {
+  const controlFileName = state?.__country === 'NZ' ? 'mcd-control_NZ.csv' : 'mcd-control.csv';
+
+  const mcdControl = (window?.Switchboard?.dataSources?.[controlFileName] || [])?.map((item) => {
     const ret = {
       ...item,
-      source: 'mcd-control.csv'
+      source: controlFileName
     };
 
     for (let key in ret) {
@@ -332,6 +334,7 @@ const App = (props) => {
     }
     return ret;
   });
+
   const mcdPos6 = (window?.Switchboard?.dataSources?.['mcd-pos6.xml.csv'] || [])?.map((item) => {
     const ret = {
       ...item,
@@ -1471,7 +1474,7 @@ const App = (props) => {
       <Global
         styles={{
           body: {
-            paddingBottom: '50vh !important'
+            // paddingBottom: '50vh !important'
           },
           '#webpack-dev-server-client-overlay': {
             transform: `scale(${newScale})`,
@@ -2131,7 +2134,7 @@ const App = (props) => {
               {/* Flip between __orientation = 'horizontal' and 'vertical' */}
               <Box
                 mr={32}
-                transform={`rotate(${state?.__orientation === 'horizontal' ? 90 : 0}deg)`}
+                transform={`rotate(${state?.__orientation === 'vertical' ? 90 : 0}deg)`}
                 onClick={() => {
                   const curOrientation = state?.__orientation;
                   const newOrientation = curOrientation === 'horizontal' ? 'vertical' : 'horizontal';
@@ -2139,6 +2142,42 @@ const App = (props) => {
 
                   set('__horizontal', newOrientation === 'horizontal');
                   set('__vertical', newOrientation === 'vertical');
+                  set('__allOrientations', false);
+                }}
+                title="Toggle Orientation"
+              >
+                🔁
+              </Box>
+
+              {/* Toggle Horizontal rotation */}
+              <Box
+                mr={32}
+                opacity={state?.__horizontal ? 1 : 0.45}
+                transform={`rotate(90deg)`}
+                mt={-10}
+                onClick={() => {
+                  const newVal = !state?.__horizontal;
+                  set('__horizontal', newVal);
+                  if (newVal) {
+                    set('__orientation', 'horizontal');
+                  }
+                  set('__allOrientations', false);
+                }}
+                title="Toggle Orientation"
+              >
+                📱
+              </Box>
+
+              {/* Toggle Vertical rotation */}
+              <Box
+                mr={32}
+                opacity={state?.__vertical ? 1 : 0.45}
+                onClick={() => {
+                  const newVal = !state?.__vertical;
+                  if (newVal) {
+                    set('__orientation', 'vertical');
+                  }
+                  set('__vertical', newVal);
                   set('__allOrientations', false);
                 }}
                 title="Toggle Orientation"

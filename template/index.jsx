@@ -34,11 +34,11 @@ const { createBrowserRouter, RouterProvider, useLocation } = ReactRouterDom;
 let stateInitialised = false;
 
 try {
-  // overwrite console log so McDev can output messages
+  // overwrite console log so tt can output messages
   // TBD
   // const old = console.log;
   // console.log = function () {
-  //   const logger = document.getElementById('mdt-logs');
+  //   const logger = document.getElementById('tt-logs');
   //   if (arguments?.some?.(a => a?.includes?.('mcout'))) {
   //     for (var i = 0; i < arguments.length; i++) {
   //       if (typeof arguments[i] == 'object') {
@@ -67,7 +67,7 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
     stateInitialised = true;
 
     const params = new URLSearchParams(location.search);
-    const newState = forceState ? { ...forceState, mdt: true } : { mdt: true };
+    const newState = forceState ? { ...forceState, tt: true } : { tt: true };
 
     for (let [key, value] of params) {
       if (
@@ -141,9 +141,15 @@ const App = (props) => {
     )
   );
 
+  console.log('nik state', state);
+
   const stateRef = React.useRef(state);
 
   const setState = (newState, uid) => {
+    if (window?.ttTrace) {
+      console.trace('🦄 setState trace');
+    }
+
     setStateAux((state) => {
       const realNewState = typeof newState === 'function' ? newState(state) : newState;
       stateRef.current = realNewState;
@@ -154,7 +160,7 @@ const App = (props) => {
     try {
       window?.modsTemplateSubscriber?.(Math.random());
     } catch (err) {
-      console.error('[McDev] Error calling modsTemplateSubscriber', err);
+      console.error('[Template] Error calling modsTemplateSubscriber', err);
     }
   };
 
@@ -194,14 +200,17 @@ const App = (props) => {
   const deleteKey = (key) => {
     const newState = { ...state };
     delete newState[key];
+    if (window?.ttLog) {
+      console.log('🦄 tt deleteKey', key, newState);
+    }
     setState(newState, 3);
   };
 
   try {
-    window.MDT.set = set;
-    window.MDT.state = state;
+    window[modName].set = set;
+    window[modName].state = state;
   } catch (err) {
-    console.error('[McDev] Error setting window.MDT.set', err);
+    console.error('[Template] Error setting window[modName].set', err);
   }
 
   const areas = ['FrontCounter', 'DriveThru', 'Dining', 'Pylon', 'McCafeReel', 'McCafeMenu'];
@@ -274,80 +283,15 @@ const App = (props) => {
     setLogs(newLogs);
   };
 
-  window.mclog = log;
-  window.McLog = log;
-  window.Mclog = log;
+  window.ttlog = log;
+  window.ttLog = log;
+  window.TtLog = log;
+  window.TtLog = log;
 
-  const mcdControl = (window?.Switchboard?.dataSources?.['mcd-control.csv'] || [])?.map((item) => {
-    const ret = {
-      ...item,
-      source: 'mcd-control.csv'
-    };
-
-    for (let key in ret) {
-      if (key?.startsWith?.('col_')) {
-        delete ret[key];
-      }
-    }
-    return ret;
-  });
-  const mcdPos6 = (window?.Switchboard?.dataSources?.['mcd-pos6.xml.csv'] || [])?.map((item) => {
-    const ret = {
-      ...item,
-      source: 'mcd-pos6.xml.csv'
-    };
-
-    for (let key in ret) {
-      if (key?.startsWith?.('col_')) {
-        delete ret[key];
-      }
-    }
-    return ret;
-  });
-  const mcdTextDb = (window?.Switchboard?.dataSources?.['mcd-text-db.csv'] || [])?.map((item) => {
-    const ret = {
-      ...item,
-      source: 'mcd-text-db.csv'
-    };
-
-    for (let key in ret) {
-      if (key?.startsWith?.('col_')) {
-        delete ret[key];
-      }
-    }
-    return ret;
-  });
-
-  const merged = React.useMemo(() => {
-    const main = mcdControl?.map?.((item) => {
-      return {
-        ...item
-      };
-    });
-
-    const posAdded = main?.map?.((item) => {
-      const posItem = mcdPos6?.find?.(
-        (posItem) => posItem?.['Product Code'] === item?.['Product Code'] && posItem?.Language?.includes(state.__country)
-      );
-      return {
-        ...item,
-        pos: {
-          ...posItem
-        },
-        source: 'Merged'
-      };
-    });
-
-    return posAdded;
-  });
-
-  window.mcdControl = mcdControl;
-  window.mcdPos6 = mcdPos6;
-  window.mcdTextDb = mcdTextDb;
-
+  // use fuse to search DB
   const searchDb = React.useMemo(() => {
     // const data = [...mcdControl, ...mcdPos6, mcdTextDb];
-    const data = [...merged];
+    const data = [];
 
     // include score
     return new Fuse(data, {
@@ -362,7 +306,7 @@ const App = (props) => {
         'Description'
       ]
     });
-  }, [mcdControl, mcdTextDb, mcdPos6]);
+  }, []);
 
   window.searchDb = searchDb;
 
@@ -370,7 +314,7 @@ const App = (props) => {
 
   const searchRef = React.useRef({ timeout: null, search: true });
 
-  const searchSwitchboard = (string) => {
+  const searchDB = (string) => {
     searchRef.current.search = false;
     try {
       const strings = string?.split?.('|');
@@ -404,12 +348,12 @@ const App = (props) => {
     searchRef.current.search = true;
   };
 
-  const searchSwitchboardDebounced = (string) => {
+  const searchDBDebounced = (string) => {
     clearTimeout(searchRef.current?.timeout);
 
     searchRef.current.timeout = setTimeout(() => {
       if (stateRef.current?.search !== false) {
-        searchSwitchboard(string);
+        searchDB(string);
       }
     }, 1000);
   };
@@ -476,7 +420,7 @@ const App = (props) => {
     }, 1000);
   };
 
-  const paramWhitelist = ['debug', 'iframeMode', 'mdt', 'figmaPreview', 'scale', 'dt_mode'];
+  const paramWhitelist = ['debug', 'iframeMode', 'tt', 'figmaPreview', 'scale', 'dt_mode'];
 
   const ignoreParams = ['__time'];
 
@@ -554,7 +498,7 @@ const App = (props) => {
       }
     }
 
-    window.MDT.state = state;
+    window[modName].state = state;
 
     // update query params daypart state changes
 
@@ -589,7 +533,7 @@ const App = (props) => {
         window.intervalCount = window.intervalCount || 1;
         window.intervalCount++;
         if (window?.intervalLogging) {
-          console.log('[McDev] Running interval 2');
+          console.log('[Template] Running interval 2');
         }
         lockVideos();
       }, 1000);
@@ -661,7 +605,7 @@ const App = (props) => {
           __screen_no: i,
           __orientation: orientation,
           iframeMode: true,
-          mdt: true
+          tt: true
         },
         true
       );
@@ -699,15 +643,15 @@ const App = (props) => {
 
   const elScaleRef = React.useRef(elScale);
 
-  // poll to add adjustment to elements with class .mdt-position
+  // poll to add adjustment to elements with class .tt-position
   React.useEffect(() => {
     const interval = setInterval(() => {
       window.intervalCount = window.intervalCount || 1;
       window.intervalCount++;
       if (window?.intervalLogging) {
-        console.log('[McDev] Running interval 3');
+        console.log('[Template] Running interval 3');
       }
-      const title = document.title?.replace('McDev - ', '')?.replace('Maccas DMB - ', '');
+      const title = document.title?.replace('tt - ', '')?.replace('Template - ', '');
       if (title !== pageTitleRef?.current) {
         if (title?.includes?.('/')) {
           setSplitChar('/');
@@ -718,16 +662,16 @@ const App = (props) => {
         setPageTitle(title);
       }
 
-      const all = document.querySelectorAll('.mdt-position');
+      const all = document.querySelectorAll('.tt-position');
 
-      let allHaveMdt = true;
+      let allHaveMods = true;
 
       all?.forEach((el) => {
         // if el doesn't have a click event listener
         // add one that allows dragging the position via changing style.left and style.top
-        if (!el?.__mdt) {
-          allHaveMdt = false;
-          el.__mdt = true;
+        if (!el?.__tt) {
+          allHaveMods = false;
+          el.__tt = true;
 
           // on click set grabbedEl to this element
           el.addEventListener('mousedown', (e) => {
@@ -786,8 +730,8 @@ const App = (props) => {
             stateRef.current.grabbedMouseX = e.clientX;
             stateRef.current.grabbedMouseY = e.clientY;
 
-            window.MDT.grabbedEl = el;
-            window.MDT.lastEl = el;
+            window[modName].grabbedEl = el;
+            window[modName].lastEl = el;
             stateRef.current.grabbedLeft = left;
             stateRef.current.grabbedTop = top;
             stateRef.current.grabbedRight = right;
@@ -804,13 +748,13 @@ const App = (props) => {
         }
       });
 
-      if (allHaveMdt) {
+      if (allHaveMods) {
         clearInterval(interval);
       }
     }, 2000);
 
     const onMouseMove = (e) => {
-      const currentEl = window.MDT.grabbedEl;
+      const currentEl = window[modName].grabbedEl;
 
       const condition =
         currentEl &&
@@ -889,7 +833,7 @@ const App = (props) => {
     };
 
     const onMouseUp = (e) => {
-      const currentEl = window.MDT.grabbedEl;
+      const currentEl = window[modName].grabbedEl;
 
       if (currentEl) {
         const newTop = Number(currentEl?.style?.top?.replace?.('px', '')?.replace?.('%', ''));
@@ -946,7 +890,7 @@ const App = (props) => {
         }
       }
 
-      window.MDT.grabbedEl = null;
+      window[modName].grabbedEl = null;
       stateRef.current.grabbedLeft = null;
       stateRef.current.grabbedTop = null;
     };
@@ -965,7 +909,7 @@ const App = (props) => {
       window.intervalCount = window.intervalCount || 1;
       window.intervalCount++;
       if (window?.intervalLogging) {
-        console.log('[McDev] Running interval 4');
+        console.log('[Template] Running interval 4');
       }
 
       const newX = stateRef.current?.scrollX || 0;
@@ -1000,37 +944,37 @@ const App = (props) => {
   const [elScale, setElScale] = React.useState(1);
 
   React.useEffect(() => {
-    if (window?.MDT?.lastEl) {
+    if (window[modName]?.lastEl) {
       // get the scale from class with format scale-[1.2]
 
-      const styleScale = window?.MDT?.lastEl?.style?.transform?.match?.(/scale\((.*?)\)/);
+      const styleScale = window[modName]?.lastEl?.style?.transform?.match?.(/scale\((.*?)\)/);
 
       if (styleScale) {
         setElScale(styleScale?.[1]);
         return;
       }
 
-      const elScaleMatch = window?.MDT?.lastEl?.className?.match?.(/scale-\[(.*?)\]/);
+      const elScaleMatch = window[modName]?.lastEl?.className?.match?.(/scale-\[(.*?)\]/);
 
       if (elScaleMatch) {
         // remove scale from class
-        window.MDT.lastEl.className = window.MDT.lastEl.className.replace(/scale-\[(.*?)\]/, '');
+        window[modName].lastEl.className = window[modName].lastEl.className.replace(/scale-\[(.*?)\]/, '');
         setElScale(elScaleMatch?.[1]);
       } else {
         // check if el has scale style
-        const scale = window?.MDT?.lastEl?.style?.scale;
+        const scale = window[modName]?.lastEl?.style?.scale;
         if (scale) {
           setElScale(scale);
         }
       }
     }
-  }, [window?.MDT?.lastEl]);
+  }, [window[modName]?.lastEl]);
 
   // transform lastEl scale by current value of el scale
   React.useEffect(() => {
-    if (window?.MDT?.lastEl) {
+    if (window[modName]?.lastEl) {
       // set transform scale style of lastEl to elScale
-      window.MDT.lastEl.style.scale = elScale;
+      window[modName].lastEl.style.scale = elScale;
       elScaleRef.current = elScale;
     } else {
       elScaleRef.current = undefined;
@@ -1108,7 +1052,7 @@ const App = (props) => {
 
           const random4letters = Math.random().toString(36).substring(2, 6);
 
-          link.download = `McDev-${time}-${dayOfWeek}-${areaString}-${state?.__orientation}-${random4letters}.png`;
+          link.download = `tt-${time}-${dayOfWeek}-${areaString}-${state?.__orientation}-${random4letters}.png`;
           link.href = png;
           link.click();
         })
@@ -1260,136 +1204,7 @@ const App = (props) => {
   };
 
   const groups = {
-    Region: ['__country'],
-    Orientation: ['__allOrientations', '__horizontal', '__vertical'],
-    Dayparts: [
-      '__time',
-      '__multiView',
-      '__area',
-      '__daypart',
-      '__mccafe',
-      '__allDayparts',
-      '__Breakfast',
-      '__MTea',
-      '__Lunch',
-      '__ATea',
-      '__Dinner',
-      '__LateNight',
-      '__Overnight',
-      '__NotBreakfast'
-    ],
-    Screens: ['__screen_no', '__no_of_screens', '__startingScreen', '__screenRange', '__minScreens', '__maxScreens'],
-    Presell: [
-      {
-        key: '__lockVideo',
-        note: "Lock's all videos at this timestamp in seconds"
-      },
-      {
-        key: '__presellIndex',
-        note: 'Filteres presell videos to only show either an index by number or where video filenames contain this value eg. 189_19_DT_Summer_2023_SoftServe_Presell_09s_10'
-      }
-    ],
-    'Creme Brulle': ['__35221', '__35222', '__35223'],
-    'Big Breakfast Deal': ['__big-breakfast-deal', '__10032'],
-
-    'Surprise Fries': ['__surprise-fries'],
-    'Caramello Flurry': [
-      {
-        key: '__30061',
-        note: 'Caramel Flurry'
-      },
-      {
-        key: '__30062',
-        note: 'LCM Caramel Flurry LCM'
-      },
-      {
-        key: '__40071',
-        note: 'Chocolate Flurry'
-      },
-      {
-        key: '__mcflurry-caramello',
-        note: 'Caramello McFlurry Campaign'
-      }
-    ],
-    'Chicken Muffins 🐔🍗': [
-      // turn into groups
-      // 40266 - CHICKEN MCMUFFIN
-      // 40267 - CHICKEN MCMUFFIN - VM
-
-      // 40268 - CHICKEN & BACON MCMUFFIN
-      // 40269 - CHICKEN&BACON MCMUFFIN - VM
-
-      {
-        key: '__chicken-mcmuffin',
-        note: 'Chicken McMuffin Campaign'
-      },
-
-      {
-        key: '__40266',
-        note: 'Chicken McMuffin'
-      },
-      {
-        key: '__40267',
-        note: 'Chicken McMuffin - VM'
-      },
-      {
-        key: '__40268',
-        note: 'Chicken & Bacon McMuffin'
-      },
-      {
-        key: '__40269',
-        note: 'Chicken & Bacon McMuffin - VM'
-      }
-    ],
-    McCrispy: ['__20562', '__20578'],
-    'Easter / HCB': [
-      {
-        key: '__hot-cross-buns-easter',
-        note: 'HCB Easter'
-      },
-      {
-        key: '__hot-cross-buns-pre-easter',
-        note: 'HCB Pre Easter'
-      },
-      {
-        key: '__35205',
-        note: 'HCB With Cadbury Choc Chips with butter'
-      },
-      {
-        key: '__7701',
-        note: 'Fruit HCB with butter'
-      }
-    ],
-    'Kerwin 🍔': ['__20606', '__20607', '__40259'],
-    'Crash 🦊': [{ key: '__happymeal-crash-bandicoot', note: 'Crash Bandicoot Happy Meal' }],
-    '$12 Nugs': ['__twelve-dollar-nuggets', { key: '__5079', note: '20pc Chicken McNuggets for $12' }],
-    'POP 🎈💢': [
-      { key: '__mcpops-trial', note: 'McPops Trial' },
-      { key: '__35228', note: 'Berry' },
-      { key: '__35229', note: 'Chocolate' },
-      { key: '__35227', note: 'Cookiebutter' }
-    ],
-    'Merch LCM 💰🪙': [
-      '__merch-LCM-trial-subtle',
-      '__merch-LCM-trial-overt',
-      '__merch-LCM-trial-vic',
-      '__merch-LCM-trial-thornleigh',
-      { key: '', note: 'Applicable new RFMs/trials' },
-      { key: '__10031', note: '2x Hash Browns Deal' },
-      { key: '__8574', note: 'LCM Soft Serve Cone with Flake' },
-      { key: '__5026', note: 'LCM 24pc Chicken McNuggets' },
-      { key: '__5738', note: 'LCM Oreo McFlurry' },
-      { key: '__30001', note: 'LCM Hot Fudge Sundae Sml' },
-      { key: '', note: 'Vanilla & Choc Soft RFMs:' },
-      { key: '__40065', note: 'Vanilla Soft Serve for Small Sundae' },
-      { key: '__40066', note: 'Chocolate Soft Serve Small Sundae' },
-      { key: '__40068', note: 'Vanilla oft Serve for Large Sundae' },
-      { key: '__40069', note: 'Chocolate Soft Serve Large Sundae' },
-      { key: '__40070', note: 'Vanilla Soft Serve for McFlurry' },
-      { key: '__40071', note: 'Chocolate Soft Serve McFlurry' },
-      { key: '__40072', note: 'Vanilla Soft Serve for Cone' },
-      { key: '__40073', note: 'Chocolate Soft Serve for Cone' }
-    ]
+    [modName]: ['Hello World 👋']
   };
 
   const [devicePixelRatio, setDevicePixelRatio] = React.useState(window?.devicePixelRatio);
@@ -1477,20 +1292,20 @@ const App = (props) => {
             pointerEvents: 'none'
           },
           '#root *': {
-            ...(state?.mdtPosition && {
+            ...(state?.ttPosition && {
               pointerEvents: 'none'
             })
           },
-          '#root .mdt-child *': {
+          '#root .tt-child *': {
             pointerEvents: 'all !important'
           },
-          '.mdt-position': {
+          '.tt-position': {
             // no drag
             '-webkit-user-drag': 'none',
             img: {
               '-webkit-user-drag': 'none'
             },
-            ...(state?.mdtPosition && {
+            ...(state?.ttPosition && {
               // grab cursor
               pointerEvents: 'all !important',
               userSelect: 'none',
@@ -1500,7 +1315,7 @@ const App = (props) => {
               }
             })
           },
-          '.mdt-self-position': {
+          '.tt-self-position': {
             // apply all of these
             // -webkit-appearance: none;
             // -moz-appearance: none;
@@ -1549,7 +1364,7 @@ const App = (props) => {
       </Flex>
 
       <Box
-        className="mcdev-container"
+        className="tt-container"
         position="fixed"
         zIndex={999999999}
         top={0}
@@ -1574,7 +1389,7 @@ const App = (props) => {
             display="flex"
             flexDir="column"
             transform={`scale(${newScale})`}
-            className="mdt-self-position"
+            className="tt-self-position"
             padding={16}
             color="white"
             w="auto"
@@ -1587,7 +1402,7 @@ const App = (props) => {
             {!state?.open && <Box width="60px" height="56px"></Box>}
 
             <Box
-              title="Open/Close McDev"
+              title="Open/Close tt"
               cursor="pointer"
               onClick={() => set('open', !state?.open)}
               position="absolute"
@@ -1595,52 +1410,24 @@ const App = (props) => {
               right={22}
               maxWidth="48px"
             >
-              <img
-                lazy
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png"
-              ></img>
+              <img lazy src={modImg}></img>
             </Box>
             <Flex alignItems="center" flexDir="row" display={state?.open ? 'flex' : 'none'}>
               <Box fontSize="36px" pb={8}>
-                McDev
+                {scriptName}
               </Box>
               <Box fontSize={24} px={18} mt={-5}>
-                🍔
+                🌈
               </Box>
-              <Flex alignItems="center" fontSize="36px" pb={8}>
-                {pageTitle?.split(splitChar)?.[0]}
-                <Box px={12} fontSize={24} mt={-2}>
-                  🍟
-                </Box>
-                {pageTitle?.split(splitChar)?.[1]}
-              </Flex>
-              <Flex alignItems="center" fontSize="36px" pb={8}>
-                {state?.__inspiration && (
-                  <>
-                    <Box px={12} fontSize={24} mt={-2}>
-                      👨‍🎨
-                    </Box>
-                    Inspiration
-                  </>
-                )}
-                {state?.__foodcourt && (
-                  <>
-                    <Box px={12} fontSize={24} mt={-2}>
-                      🍽️
-                    </Box>
-                    Foodcourt
-                  </>
-                )}
-              </Flex>
             </Flex>
 
             <Flex
               overflowY="scroll"
               display={state?.open && logs?.length && state?.showLogs !== false ? undefined : 'none'}
               flexDir="column"
-              id="mdt-logs"
+              id="tt-logs"
               borderRadius={12}
-              maxH={(window.outerHeight * (state.maxHLog || 0.2)) / scaleRef.current + 'px'}
+              maxH={(window.outerHeight * (state?.maxHLog || 0.2)) / scaleRef.current + 'px'}
               gap={12}
               // bg="rgba(255,255,255,0.1)"
               bg="#FFCD2733"
@@ -1660,7 +1447,7 @@ const App = (props) => {
             <Flex
               overflowY="scroll"
               display={state?.open && state?.showSearch !== false ? undefined : 'none'}
-              maxH={(window.outerHeight * (state.maxHSearch || 0.5)) / scaleRef.current + 'px'}
+              maxH={(window.outerHeight * (state?.maxHSearch || 0.5)) / scaleRef.current + 'px'}
               flexDir="column"
               id="csv-search"
               borderRadius={12}
@@ -1680,7 +1467,7 @@ const App = (props) => {
                 placeholder="McSearch"
                 onChange={(e) => {
                   const val = e.target.value;
-                  searchSwitchboardDebounced(val);
+                  searchDBDebounced(val);
                 }}
               />
 
@@ -1712,7 +1499,7 @@ const App = (props) => {
             <Box
               display={state?.open && !state?.hideData ? 'block' : 'none'}
               // maxH={state?.varsMaxH}
-              maxH={(window.outerHeight * (state.maxHData || 0.3)) / scaleRef.current + 'px'}
+              maxH={(window.outerHeight * (state?.maxHData || 0.3)) / scaleRef.current + 'px'}
               w={'auto'}
               overflowY="scroll"
             >
@@ -2079,9 +1866,9 @@ const App = (props) => {
               {/* Toggle drag and drop position */}
               <Box
                 mr={32}
-                opacity={state?.mdtPosition ? 1 : 0.45}
+                opacity={state?.ttPosition ? 1 : 0.45}
                 onClick={() => {
-                  set('mdtPosition', !state?.mdtPosition);
+                  set('ttPosition', !state?.ttPosition);
                 }}
                 title="Toggle Drag and Drop Position"
               >
@@ -2346,21 +2133,12 @@ const App = (props) => {
               </Box>
 
               <Flex>
-                <Box
-                  title="Scale Down McDev"
-                  py={3}
-                  textAlign="center"
-                  bg="#FFCD27"
-                  borderRadius="8px"
-                  width="80px"
-                  ml="auto"
-                  onClick={decreaseScale}
-                >
+                <Box title="Scale Down tt" py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" ml="auto" onClick={decreaseScale}>
                   <Box mt={3} fontSize="28px">
                     -
                   </Box>
                 </Box>
-                <Box title="Scale Up McDev" ml={16} py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" onClick={increaseScale}>
+                <Box title="Scale Up tt" ml={16} py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" onClick={increaseScale}>
                   <Box mt={3} fontSize="28px">
                     +
                   </Box>
@@ -2374,7 +2152,7 @@ const App = (props) => {
   );
 };
 
-const root = ReactDOM.createRoot(document.getElementById('mod-template-script'));
+const root = ReactDOM.createRoot(mountQuery());
 
 const router = createBrowserRouter([{ path: '*', element: <App /> }]);
 

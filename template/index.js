@@ -1,38 +1,63 @@
+// global configs up here
+window.ttLog = true;
+window.ttTrace = true;
+// window.ttLog = false;
+// window.ttTrace = false;
+
+// Settings go here
+const modTitle = 'Template';
+const modName = modTitle?.toLowerCase()?.replace(' ', '-');
+const scriptName = modName + '/index';
+
+const mountId = modName + '-mods-mount';
+
+const mountQuery = () => {
+  return document.querySelector('#' + mountId);
+};
+
+// default to the funniest picture on the internet, a png !
+const modImg = `/${modName}/🦄.png`;
+
+console.log('🦄', modName, 'Injected 🦄');
+
 try {
-  window.MDT = window?.MDT || {};
+  window[modName] = window?.[modName] || {};
 
   const allScripts = document.querySelectorAll('script');
 
-  const injectedScriptSrc = Array.from(allScripts).find((script) => script.src?.includes('maccas.js'));
+  const injectedScriptSrc = Array.from(allScripts).find((script) => script.src?.includes(scriptName + '.js'));
   const prod = injectedScriptSrc?.src?.includes('jsdelivr');
 
   if (prod) {
+    console.log('🦄', modName, 'prod', '🦄');
     const version = injectedScriptSrc.src.split('@')[1].split('/')[0];
-    MDT.baseUrl = `https://cdn.jsdelivr.net/gh/lopugit/mods@${version}/`;
+    window[modName].baseUrl = `https://cdn.jsdelivr.net/gh/lopugit/mods@${version}/`;
   } else {
-    MDT.baseUrl = 'https://localhost:3993/file?url=';
+    console.log('🦄', modName, 'dev', '🦄');
+    window[modName].baseUrl = 'https://localhost:3993/file?url=';
   }
 
   (async () => {
     const href = window.location.href;
 
-    if (href?.includes('mdt=true')) {
+    if (href?.includes('mods=true') || true) {
       let success = false;
 
       try {
-        // check if div with id maccas-dev-tools already exists
+        // check if div with id of mod mount already exists
 
-        const existingAppStub = document.getElementById('maccas-dev-tools');
+        const existingAppStub = mountQuery();
 
         if (existingAppStub) {
+          console.log('🦄', modName, 'already mounted 🦄');
           return;
         }
 
         const div = document.createElement('div');
-        div.id = 'maccas-dev-tools';
+        div.id = mountId;
         document.body.appendChild(div);
 
-        const appStub = document.getElementById('maccas-dev-tools');
+        const appStub = mountQuery();
 
         if (appStub) {
           function loadScript(src, type, instant) {
@@ -82,13 +107,13 @@ try {
             {
               content: `
           
-            import React from "https://esm.sh/react@18";
+            import React from "https://esm.sh/react@18?dev";
             window.React = React
             
-            import ReactDOM from "https://esm.sh/react-dom@18.2.0/client";
+            import ReactDOM from "https://esm.sh/react-dom@18.2.0/client?dev";
             window.ReactDOM = ReactDOM
             
-            import * as ReactRouterDom from 'https://esm.sh/react-router-dom@6.21.1';
+            import * as ReactRouterDom from 'https://esm.sh/react-router-dom@6.21.1?dev';
             window.ReactRouterDom = ReactRouterDom
             
             import * as useQueryParams from "https://esm.sh/use-query-params@2.2.1";
@@ -115,7 +140,7 @@ try {
             'ChakraUI'
           );
 
-          await loadScript(MDT.baseUrl + 'maccas.jsx', 'text/jsx', true);
+          await loadScript(window[modName].baseUrl + scriptName + '.jsx', 'text/jsx', true);
 
           window.Babel.transformScriptTags();
         }
@@ -125,5 +150,5 @@ try {
     }
   })();
 } catch (err) {
-  console.error('Error in maccas.js', err);
+  console.error(`Error in ${scriptName} .js`, err);
 }
