@@ -1,0 +1,12 @@
+{
+  "name": "ytmscraper",
+  "jsdelivr": "https://cdn.jsdelivr.net/gh/lopugit/mods@latest/ytmscraper/index.js",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
