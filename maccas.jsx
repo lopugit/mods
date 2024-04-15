@@ -1303,6 +1303,18 @@ const App = (props) => {
     );
   };
 
+  const nzShakeRfms = {
+    CHOCOLATE_SHAKE_LARGE: '81',
+    CHOCOLATE_SHAKE_MED: '80',
+    CHOCOLATE_SHAKE_SMALL: '79',
+    STRAWBERRY_SHAKE_LARGE: '87',
+    STRAWBERRY_SHAKE_MED: '86',
+    STRAWBERRY_SHAKE_SMALL: '85',
+    VANILLA_SHAKE_LARGE: '7903',
+    VANILLA_SHAKE_MED: '7902',
+    VANILLA_SHAKE_SMALL: '7901'
+  };
+
   const groups = {
     Region: ['__country'],
     Orientation: ['__allOrientations', '__horizontal', '__vertical'],
@@ -1355,6 +1367,13 @@ const App = (props) => {
         note: 'Caramello McFlurry Campaign'
       }
     ],
+    'Shakes 🧋': Object.entries(nzShakeRfms || {})?.map((rfmPair) => {
+      return {
+        key: '__' + rfmPair[1],
+        note: rfmPair[0]
+      };
+    }),
+
     'Chicken Muffins 🐔🍗': [
       // turn into groups
       // 40266 - CHICKEN MCMUFFIN
