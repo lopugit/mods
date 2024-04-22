@@ -15,6 +15,8 @@ let run = true;
 </tr> */
 }
 
+let prevLength = 0;
+
 setInterval(() => {
   if (run) {
     try {
@@ -22,11 +24,28 @@ setInterval(() => {
 
       const els = document.querySelectorAll('.amount.align_right');
 
+      if (els?.length === prevLength) {
+        return;
+      }
+
+      prevLength = els.length;
+
       const reversedEls = Array.from(els).reverse();
+
+      // remove all els with class commbank-mods-js-subtotal-to-date
+
+      const subtotalToDateEls = document.querySelectorAll('.commbank-mods-js-subtotal-to-date');
+
+      subtotalToDateEls.forEach((el) => {
+        el.remove();
+      });
 
       reversedEls.forEach((el) => {
         total += parseFloat(el.innerText.replace('$', '').replace(',', ''));
-        el.insertAdjacentHTML('afterend', `<span style="margin-left: 10px; color: #999;">${total.toFixed(2)}</span>`);
+        el.insertAdjacentHTML(
+          'afterend',
+          `<span class="commbank-mods-js-subtotal-to-date" style="margin-left: 10px; color: #999;">${total.toFixed(2)}</span>`
+        );
       });
 
       // insert a div above this element .divRecentSearching with all
@@ -37,7 +56,15 @@ setInterval(() => {
       if (divRecentSearching) {
         const transactionDetails = document.querySelectorAll('.transaction_details');
 
+        const prevDiv = document.getElementById('commbank-mods-js');
+        if (prevDiv) {
+          prevDiv.remove();
+        }
+
         const div = document.createElement('div');
+
+        div.setAttribute('id', 'commbank-mods-js');
+
         div.innerHTML = `
           <h2>Transaction Details</h2>
           <div class="spending-details-mods">
@@ -67,8 +94,18 @@ setInterval(() => {
 
         const sorted = Object.keys(grouped).sort((a, b) => grouped[a] - grouped[b]);
 
+        // delete all els with class spending-details-mods-row
+
+        const spendingDetailsModsRows = document.querySelectorAll('.spending-details-mods-row');
+
+        spendingDetailsModsRows.forEach((el) => {
+          el.remove();
+        });
+
         sorted.forEach((key) => {
           const div = document.createElement('div');
+
+          div.setAttribute('class', 'spending-details-mods-row');
 
           div.style.cssText = `
             display: flex;
@@ -100,6 +137,6 @@ setInterval(() => {
       console.error(e);
     }
 
-    run = false;
+    // run = false;
   }
 }, 1000);

@@ -31,6 +31,9 @@ const { Global } = Emotion;
 
 const { createBrowserRouter, RouterProvider, useLocation } = ReactRouterDom;
 
+const Resizable = window?.Resizable;
+const Draggable = window?.Draggable;
+
 const refreshable = [
   '__inspiration',
   '__orientation',
@@ -47,6 +50,18 @@ const noRefresh = [
 let stateInitialised = false;
 
 const ignoreInIframe = ['figmaPreview'];
+
+window.clearMcDev = () => {
+  window.localStorage.clear('maccas-dev-tools');
+  window.localStorage.clear('maccas-dev-tools__stateKey');
+  window.localStorage.clear('mdtUrl');
+  window.localStorage.clear('contextFields');
+  // delete all queryParams
+  window.history.replaceState({}, '', window.location.pathname);
+  window.location.reload();
+};
+
+window.resetMcDev = window.clearMcDev;
 
 try {
   // overwrite console log so McDev can output messages
@@ -73,10 +88,21 @@ try {
   console.error('Error overwriting console.log', err);
 }
 
+const defaultState = {
+  __allOrientations: true,
+  __multiView: true,
+  // __minScreens: 3,
+  // __maxScreens: 6,
+  __area: 'FrontCounter',
+  __daypart: 'Lunch',
+  __country: 'AU',
+  contextFields: '__orientation,__no_of_screens,__screen_no,__daypart,__country,__time,__channel,__screenNo,__noOfScreens'
+};
+
 const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
   try {
     if (stateInitialised && !ignoreInitialised) {
-      return;
+      return {};
     }
 
     stateInitialised = true;
@@ -108,14 +134,27 @@ const initialiseStateFromParams = (forceState, location, ignoreInitialised) => {
       }
     }
 
-    return newState;
+    // set defaultState for some keys
+    for (let [key, value] of Object.entries(defaultState)) {
+      if (!newState.hasOwnProperty(key)) {
+        newState[key] = value;
+      }
+    }
 
-    // setState((state) => {
-    //   return { ...state, ...newState }
-    // }, 4)
+    // delete any keys that have the value "delete"
+    for (let [key, value] of Object.entries(newState)) {
+      if (value === 'delete') {
+        delete newState[key];
+      }
+    }
+
+    if (newState) {
+      return newState;
+    }
   } catch (err) {
     console.error('Error initialising state from params', err);
   }
+  return {};
 };
 
 // get initialStateKey from window query params stateKey
@@ -163,6 +202,13 @@ const App = (props) => {
       const realNewState = typeof newState === 'function' ? newState(state) : newState;
       stateRef.current = realNewState;
 
+      // delete any keys that have the value "delete"
+      for (let [key, value] of Object.entries(realNewState)) {
+        if (value === 'delete') {
+          delete realNewState[key];
+        }
+      }
+
       return realNewState;
     });
 
@@ -182,7 +228,6 @@ const App = (props) => {
         window.intervalCount = window.intervalCount || 1;
         window.intervalCount++;
         if (window?.intervalLogging) {
-          console.log('[McDev] Running interval 1');
         }
         const stateString = window.localStorage.getItem(stateKey);
 
@@ -190,7 +235,9 @@ const App = (props) => {
           oldStateStringRef.current = stateString;
           try {
             const newState = initialiseStateFromParams(JSON.parse(stateString), location, true);
-            setState(newState, 7);
+            if (newState) {
+              setState(newState, 7);
+            }
           } catch {
             console.error('Error parsing cached state');
           }
@@ -273,12 +320,16 @@ const App = (props) => {
 
   const increaseScale = React.useCallback(() => {
     const newScale = Number(scale) + lowerStep || 1;
-    set('scale', newScale);
+    // roundToNearest single digit decimal
+    const roundedScale = Math.round(newScale * 10) / 10;
+    set('scale', roundedScale);
   }, [scale]);
 
   const decreaseScale = React.useCallback(() => {
     const newScale = Number(scale) - lowerStep || 1;
-    set('scale', newScale);
+    // roundToNearest single digit decimal
+    const roundedScale = Math.round(newScale * 10) / 10;
+    set('scale', roundedScale);
   }, [scale]);
 
   // update state daypart location changes
@@ -532,8 +583,25 @@ const App = (props) => {
         setOldParams(location.search);
       }
       for (let [key, value] of Object.entries(state)) {
-        if (key?.startsWith('__') || paramWhitelist?.includes(key)) {
-          params.set(key, value);
+        const currentParamValue = params.get(key);
+
+        if (key?.includes('mdtUrl')) {
+        }
+
+        if (currentParamValue === 'delete' || value === 'delete') {
+          params.delete(key, 'delete');
+        } else {
+          if (key?.startsWith('__') || paramWhitelist?.includes(key)) {
+            params.set(key, value);
+          }
+        }
+      }
+
+      // loop over query params and delete any with the value "delete"
+      const paramsObj = Object.fromEntries(params.entries());
+      for (let [key, value] of Object.entries(paramsObj)) {
+        if (value === 'delete') {
+          params.delete(key);
         }
       }
 
@@ -623,6 +691,30 @@ const App = (props) => {
     setOldState(state);
 
     onStateChange(state);
+
+    const contextFields = state?.contextFields;
+
+    if (contextFields) {
+      try {
+        if (contextFields === 'delete') {
+          window.localStorage.setItem('contextFields', defaultState?.contextFields);
+        } else {
+          window.localStorage.setItem('contextFields', contextFields);
+        }
+      } catch (err) {
+        console.error('Error setting contextFields', err);
+      }
+    }
+
+    const mdtUrl = state?.mdtUrl || state?.__mdtUrl;
+
+    if (mdtUrl && mdtUrl !== 'delete') {
+      try {
+        window.localStorage.setItem('mdtUrl', mdtUrl);
+      } catch (err) {
+        console.error('Error setting mdtUrl', err);
+      }
+    }
   }, [state, stateKey]);
 
   React.useEffect(() => {
@@ -633,7 +725,6 @@ const App = (props) => {
         window.intervalCount = window.intervalCount || 1;
         window.intervalCount++;
         if (window?.intervalLogging) {
-          console.log('[McDev] Running interval 2');
         }
         lockVideos();
       }, 1000);
@@ -664,77 +755,6 @@ const App = (props) => {
     return ret?.reverse();
   }, []);
 
-  // make sure preview display is in sync with show
-  React.useEffect(() => {
-    const newState = { ...stateRef.current };
-
-    allPreviews?.forEach((nScreens) => {
-      const screenCount = nScreens?.[0]?.__no_of_screens;
-
-      const uid = `show${screenCount}`;
-
-      if (!newState?.[uid] || !newState?.[uid + 'disp']) {
-        newState[uid] = false;
-        newState[uid + 'disp'] = false;
-      }
-
-      nScreens.forEach((bank) => {
-        const orientation = bank.__orientation;
-
-        const uid2 = `show${screenCount}${orientation}`;
-
-        if (!newState?.[uid2] || !newState?.[uid2 + 'disp']) {
-          newState[uid2] = false;
-          newState[uid2 + 'disp'] = false;
-        }
-      });
-    });
-
-    setState(newState, 5);
-  }, [allPreviews]);
-
-  const iframeRef = React.useRef({});
-
-  const getCachedIframe = React.useCallback(
-    (screenCount, orientation, i, width, height) => {
-      const newUrl = createUrlFromState(
-        {
-          ...state,
-          debug: true,
-          __no_of_screens: screenCount,
-          __screen_no: i,
-          __orientation: orientation,
-          iframeMode: true,
-          mdt: true
-        },
-        true
-      );
-
-      const uid = `iframe${screenCount}${orientation}${i}`;
-
-      if (!iframeRef?.current?.[uid]) {
-        const newIframe = (
-          <iframe
-            src={newUrl}
-            width={width + 'px'}
-            height={height + 'px'}
-            style={{
-              transformOrigin: '0 0',
-              border: 'none'
-            }}
-          ></iframe>
-        );
-
-        iframeRef.current[uid] = newIframe;
-
-        return newIframe;
-      } else {
-        return iframeRef.current[uid];
-      }
-    },
-    [state, iframeRef]
-  );
-
   const lowStepKeys = ['scale', 'figmaPreview', 'contentPreview', 'iframeScale'];
 
   const [pageTitle, setPageTitle] = React.useState(document.title);
@@ -749,7 +769,6 @@ const App = (props) => {
       window.intervalCount = window.intervalCount || 1;
       window.intervalCount++;
       if (window?.intervalLogging) {
-        console.log('[McDev] Running interval 3');
       }
       const title = document.title?.replace('McDev - ', '')?.replace('Maccas DMB - ', '');
       if (title !== pageTitleRef?.current) {
@@ -894,8 +913,6 @@ const App = (props) => {
           className?.includes?.(' !left-') ||
           className?.startsWith('!left-')
         ) {
-          console.log('nik wait what', newLeft, newTop, newRight, newBottom);
-
           currentEl.style.left = newLeft + 'px';
           currentEl.style.setProperty('left', newLeft + 'px', 'important');
         }
@@ -1009,7 +1026,6 @@ const App = (props) => {
       window.intervalCount = window.intervalCount || 1;
       window.intervalCount++;
       if (window?.intervalLogging) {
-        console.log('[McDev] Running interval 4');
       }
 
       const newX = stateRef.current?.scrollX || 0;
@@ -1082,8 +1098,11 @@ const App = (props) => {
   }, [elScale]);
 
   React.useEffect(() => {
-    // set up MDTsubscriber
-    window?.MDTsubscriber?.(Math.random());
+    try {
+      window.MDTsubscriber(Math.random());
+    } catch (err) {
+      console.error('[McDev] Error calling MDTsubscriber', err);
+    }
   }, []);
 
   const [imgLoading, setImgLoading] = React.useState(false);
@@ -1286,7 +1305,9 @@ const App = (props) => {
     return (
       <Box mb={6} display="flex" flexGrow={0} flexShrink={1} flexDirection="column">
         <Flex flexDir="row" w="auto" flexShrink={0} position="relative" fontSize="16px" fontWeight="400" my={8}>
-          {key} {note}
+          <Box as="span" maxWidth="160px">
+            {key} {note}
+          </Box>
           <Box ml={4} cursor="pointer" fontSize="10px" onClick={() => deleteKey(key)}>
             🗑️
           </Box>
@@ -1347,6 +1368,30 @@ const App = (props) => {
     ],
     'Creme Brulle': ['__35221', '__35222', '__35223'],
     'Big Breakfast Deal': ['__big-breakfast-deal', '__10032'],
+
+    'Spicy Nugs McBites': [
+      {
+        key: '__mcbites-trial',
+        note: 'McBites Trial'
+      },
+
+      {
+        key: '__4854',
+        note: 'Spicy Nugs 20 piece'
+      },
+
+      {
+        key: '__980',
+        note: 'McBites 10 pc'
+      },
+
+      {
+        key: '__6267',
+        note: 'Custard Pie'
+      },
+
+      { key: '__1780', note: 'Hot Fudge Sundae Large' }
+    ],
 
     'Surprise Fries': ['__surprise-fries'],
     'Caramello Flurry': [
@@ -1487,6 +1532,38 @@ const App = (props) => {
   const adjustment = (scaleRef.current - 1) * screenScale;
   const newScale = screenScale + adjustment;
 
+  const [testState, setTestState] = React.useState({
+    width: 500,
+    height: 500
+  });
+
+  const onDrag = (e) => {
+    const draggableBottom = state?.draggableBottom || 0;
+    const draggableRight = state?.draggableRight || 0;
+
+    const { movementX, movementY } = e;
+
+    // current window zoom level
+    const currentZoom = window?.devicePixelRatio;
+
+    const { modifiedX, modifiedY } = {
+      modifiedX: movementX / (currentZoom / newScale),
+      modifiedY: movementY / (currentZoom / newScale)
+    };
+
+    set('draggableBottom', draggableBottom - modifiedY);
+    set('draggableRight', draggableRight - modifiedX);
+  };
+
+  window.resetWindow = () => {
+    set('draggableBottom', 0);
+    set('draggableRight', 0);
+    set('resizableHeight', 1000);
+    set('resizableWidth', 1000);
+  };
+
+  const DraggableCore = Draggable?.DraggableCore;
+
   // template
   return (
     <>
@@ -1620,852 +1697,888 @@ const App = (props) => {
         left={0}
         bottom={0}
         right={0}
-        pointerEvents="none"
+        // pointerEvents="none"
         // bg="rgba(0,0,0,0.2)"
       >
         <Box w="100%" h="100%" position="relative">
-          <Box
-            zIndex={9999999}
-            sx={{
-              '*': {
-                'line-height': '100% !important'
-              }
-            }}
-            position="absolute"
-            bottom={0}
-            right={0}
-            display="flex"
-            flexDir="column"
-            transform={`scale(${newScale})`}
-            className="mdt-self-position"
-            padding={16}
-            color="white"
-            w="auto"
-            maxH={(window.outerHeight * 0.8) / scaleRef.current + 'px'}
-            borderRadius="16px"
-            bg="#DD2514"
-            pointerEvents="all"
-            transformOrigin="bottom right"
-          >
-            {!state?.open && <Box width="60px" height="56px"></Box>}
+          {Resizable && (
+            <>
+              <Resizable
+                height={state?.resizableHeight || 1000}
+                width={state?.resizableWidth || 1000}
+                onResize={(event, { node, size, handle }) => {
+                  set('resizableHeight', size.height);
+                  set('resizableWidth', size.width);
+                }}
+                resizeHandles={state?.open ? ['sw', 'se', 'nw', 'ne', 'w', 'e', 'n', 's'] : []}
+              >
+                <Box
+                  zIndex={9999999}
+                  sx={{
+                    '*': {
+                      'line-height': '100% !important'
+                    }
+                  }}
+                  position="absolute"
+                  bottom={state?.draggableBottom || 0}
+                  right={state?.draggableRight || 0}
+                  display="flex"
+                  flexDir="column"
+                  transform={`scale(${newScale})`}
+                  // className="mdt-self-position"
+                  padding={16}
+                  color="white"
+                  // w="auto"
+                  maxH={(window.outerHeight * 0.8) / scaleRef.current + 'px'}
+                  height={state?.open ? state?.resizableHeight : 'auto'}
+                  width={state?.open ? state?.resizableWidth : 'auto'}
+                  borderRadius="16px"
+                  bg="#DD2514"
+                  pointerEvents="all"
+                  transformOrigin="bottom right"
+                >
+                  {!state?.open && <Box width="60px" height="56px"></Box>}
 
-            <Box
-              title="Open/Close McDev"
-              cursor="pointer"
-              onClick={() => set('open', !state?.open)}
-              position="absolute"
-              top={-22}
-              right={22}
-              maxWidth="48px"
-            >
-              <img
-                lazy
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png"
-              ></img>
-            </Box>
-            <Flex alignItems="center" flexDir="row" display={state?.open ? 'flex' : 'none'}>
-              <Box fontSize="36px" pb={8}>
-                McDev
-              </Box>
-              <Box fontSize={24} px={18} mt={-5}>
-                🍔
-              </Box>
-              <Flex alignItems="center" fontSize="36px" pb={8}>
-                {pageTitle?.split(splitChar)?.[0]}
-                <Box px={12} fontSize={24} mt={-2}>
-                  🍟
-                </Box>
-                {pageTitle?.split(splitChar)?.[1]}
-              </Flex>
-              <Flex alignItems="center" fontSize="36px" pb={8}>
-                {state?.__inspiration && (
-                  <>
-                    <Box px={12} fontSize={24} mt={-2}>
-                      👨‍🎨
+                  {DraggableCore && (
+                    <>
+                      <DraggableCore onDrag={onDrag}>
+                        <Box
+                          title="Open/Close McDev"
+                          cursor="pointer"
+                          onClick={() => set('open', !state?.open)}
+                          position="absolute"
+                          top={-22}
+                          right={22}
+                          maxWidth="48px"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                          }}
+                        >
+                          <img
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                            }}
+                            lazy
+                            src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png"
+                          ></img>
+                        </Box>
+                      </DraggableCore>
+                    </>
+                  )}
+                  <Flex alignItems="center" flexDir="row" display={state?.open ? 'flex' : 'none'}>
+                    <Box fontSize="36px" pb={8}>
+                      McDev
                     </Box>
-                    Inspiration
-                  </>
-                )}
-                {state?.__foodcourt && (
-                  <>
-                    <Box px={12} fontSize={24} mt={-2}>
+                    <Box fontSize={24} px={18} mt={-5}>
+                      🍔
+                    </Box>
+                    <Flex alignItems="center" fontSize="36px" pb={8}>
+                      {!state?.__multiView ? (
+                        <>
+                          {pageTitle?.split(splitChar)?.[0]}
+                          <Box px={12} fontSize={24} mt={-2}>
+                            🍟
+                          </Box>
+                          {pageTitle?.split(splitChar)?.[1]}
+                        </>
+                      ) : (
+                        'Multi View'
+                      )}
+                    </Flex>
+                    <Flex alignItems="center" fontSize="36px" pb={8}>
+                      {state?.__inspiration && (
+                        <>
+                          <Box px={12} fontSize={24} mt={-2}>
+                            👨‍🎨
+                          </Box>
+                          Inspiration
+                        </>
+                      )}
+                      {state?.__foodcourt && (
+                        <>
+                          <Box px={12} fontSize={24} mt={-2}>
+                            🍽️
+                          </Box>
+                          Foodcourt
+                        </>
+                      )}
+                    </Flex>
+                  </Flex>
+
+                  <Flex
+                    overflowY="scroll"
+                    display={state?.open && logs?.length && state?.showLogs !== false ? undefined : 'none'}
+                    flexDir="column"
+                    id="mdt-logs"
+                    borderRadius={12}
+                    maxH={(window.outerHeight * (state?.maxHLog || 0.2)) / scaleRef.current + 'px'}
+                    gap={12}
+                    // bg="rgba(255,255,255,0.1)"
+                    bg="#FFCD2733"
+                    fontSize="24px"
+                    my={12}
+                    p={12}
+                  >
+                    {logs?.map?.((log, i) => {
+                      return (
+                        <Box gap={12} key={i} fontSize="24px">
+                          {log}
+                        </Box>
+                      );
+                    })}
+                  </Flex>
+
+                  <Flex
+                    overflowY="scroll"
+                    display={state?.open && state?.showSearch ? undefined : 'none'}
+                    maxH={(window.outerHeight * (state.maxHSearch || 0.5)) / scaleRef.current + 'px'}
+                    flexDir="column"
+                    id="csv-search"
+                    borderRadius={12}
+                    gap={12}
+                    fontSize="24px"
+                    my={12}
+                    p={12}
+                  >
+                    <Input
+                      outline="none !important"
+                      px={8}
+                      py={16}
+                      type="search"
+                      color="black"
+                      borderRadius={12}
+                      fontWeight="normal"
+                      placeholder="McSearch"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        searchSwitchboardDebounced(val);
+                      }}
+                    />
+
+                    {searchResults?.length && (
+                      <Flex maxWidth="100%" flexDir="column" bg="rgba(255,255,255,0.1)" gap={8} fontSize="24px" my={12} p={12}>
+                        {searchResults?.map?.((result, i) => {
+                          return (
+                            <Box overflowX="scroll" maxWidth="100%" gap={12} key={i} fontSize="24px">
+                              {typeof result === 'string' ? (
+                                result
+                              ) : (
+                                <pre
+                                  style={{
+                                    maxWidth: 100 / screenScale + 'px'
+                                  }}
+                                >
+                                  {JSON.stringify(result, null, 2)}
+                                </pre>
+                              )}
+                              {/* {result} */}
+                            </Box>
+                          );
+                        })}
+                      </Flex>
+                    )}
+                  </Flex>
+
+                  {/* This will render all state and allow all values to be editable with special interactions for certain state values/types depending on schema */}
+                  <Flex
+                    display={state?.open && !state?.hideData ? 'flex' : 'none'}
+                    // maxH={state?.varsMaxH}
+                    // maxH={(window.outerHeight * (state.maxHData || 0.3)) / scaleRef.current + 'px'}
+                    w="100%"
+                    h="100%"
+                    gap={32}
+                    // w={'auto'}
+                    flexDir="row"
+                    wrap={'wrap'}
+                    overflowY="scroll"
+                  >
+                    {Object.entries(groups || {})
+                      ?.sort(([key1, value1], [key2, value2]) => {
+                        // sort with pinned first
+                        if (state?.[key1] && !state?.[key2]) {
+                          return -1;
+                        } else if (!state?.[key1] && state?.[key2]) {
+                          return 1;
+                        } else {
+                          // return key1?.localeCompare?.(key2)
+                        }
+                      })
+                      ?.map(([groupName, keys]) => {
+                        return (
+                          <Box>
+                            <Box my={12} mt={48}>
+                              <Box fontSize="36px" display="inline-block" position="relative">
+                                {groupName}
+                                <Box
+                                  position="absolute"
+                                  transform="translate(100%, -50%)"
+                                  right={0}
+                                  cursor="pointer"
+                                  top={0}
+                                  title="Sticky Group"
+                                  fontSize={'26px'}
+                                  opacity={state?.[groupName] ? 1 : 0.5}
+                                  onClick={() => {
+                                    // pin group on click
+                                    set(groupName, !state?.[groupName]);
+                                  }}
+                                >
+                                  💛
+                                </Box>
+                              </Box>
+                            </Box>
+                            {/* <Flex width="100%" flexShrink={1} maxWidth={"700px"} flexWrap="wrap"> */}
+                            {keys?.map((keyObj) => {
+                              const key = typeof keyObj === 'string' ? keyObj : keyObj?.key;
+
+                              return stateInput({ key, value: state?.[key], note: keyObj?.note });
+                            })}
+                            {/* </Flex> */}
+                          </Box>
+                        );
+                      })}
+
+                    <Box fontSize="36px" my={12} mt={48}>
+                      All
+                    </Box>
+                    {sortedState?.map(([key, value]) => {
+                      return stateInput({ key, value });
+                    })}
+                  </Flex>
+
+                  <Box mt={'auto'}></Box>
+
+                  <Flex display={state?.open ? 'flex' : 'none'} justifyContent="flex-end" my={30} gap={16} wrap={'wrap'}>
+                    {/* Area Selection Dropdown */}
+                    <Box
+                    // lower gap for these
+                    >
+                      <select
+                        style={{
+                          outline: 'none !important',
+                          border: 'none !important',
+                          borderRadius: '8px',
+                          color: 'black',
+                          padding: '6px'
+                        }}
+                        onChange={(e) => {
+                          const newVal = e.target.value;
+                          set(['area', '__area'], newVal);
+                        }}
+                        value={state?.area}
+                      >
+                        {areas.map((val) => {
+                          return <option key={val}>{val}</option>;
+                        })}
+                      </select>
+                    </Box>
+
+                    {/* Daypart Selection Dropdown */}
+                    <Box>
+                      <select
+                        style={{
+                          outline: 'none !important',
+                          border: 'none !important',
+                          borderRadius: '8px',
+                          color: 'black',
+                          padding: '6px'
+                        }}
+                        onChange={(e) => {
+                          const newVal = e.target.value;
+                          set(['daypart', '__daypart'], newVal);
+                          set(`__${newVal}`, true);
+
+                          // unset all other dayparts
+                          // '__allDayparts',
+                          // '__Breakfast',
+                          // '__MTea',
+                          // '__Lunch',
+                          // '__ATea',
+                          // '__Dinner',
+                          // '__LateNight',
+                          // '__Overnight',
+                          // '__NotBreakfast'
+
+                          const filteredDayparts = dayparts.filter((val) => val !== newVal)?.map((val) => '__' + val);
+                          set(['__allDayparts', ...filteredDayparts], false);
+                        }}
+                        value={state?.daypart}
+                      >
+                        {dayparts.map((val) => {
+                          return <option key={val}>{val}</option>;
+                        })}
+                      </select>
+                    </Box>
+
+                    {/* Screen Selection Dropdown */}
+                    <Box>
+                      <select
+                        style={{
+                          outline: 'none !important',
+                          border: 'none !important',
+                          borderRadius: '8px',
+                          color: 'black',
+                          padding: '6px'
+                        }}
+                        value={`${state?.__no_of_screens}_${state?.__orientation}_${state?.__screen_no}`}
+                        onChange={(e) => {
+                          const val = e.target.value;
+
+                          const [screenCount, orientation, i] = val.split('_');
+
+                          if (!(i === state?.__screen_no && orientation === state?.__orientation && screenCount === state?.__no_of_screens)) {
+                            setState((state) => {
+                              return {
+                                ...state,
+                                __no_of_screens: screenCount,
+                                __startingScreen: 1,
+                                __screenRange: screenCount,
+                                __maxScreens: screenCount,
+                                __minScreens: screenCount,
+                                __screen_no: i,
+                                __orientation: orientation
+                              };
+                            }, 6);
+
+                            // set __horizontal and __vertical according to new orientation switch
+
+                            set('__horizontal', orientation === 'horizontal');
+                            set('__vertical', orientation === 'vertical');
+                            set('__allOrientations', false);
+                          }
+                        }}
+                      >
+                        {/* Flatten allPreviews into options of number of screens + screen # for that bank */}
+                        {allPreviews?.map((nScreens) => {
+                          const screenCount = nScreens?.[0]?.__no_of_screens;
+
+                          const uid = `show${screenCount}`;
+
+                          return (
+                            <optgroup label={screenCount + ' Screens'}>
+                              {nScreens.map((bank) => {
+                                const orientation = bank.__orientation;
+
+                                const uid2 = `${screenCount}_${orientation}`;
+
+                                const mappable = Array(bank?.__no_of_screens).fill();
+
+                                return mappable.map((_, fakei) => {
+                                  // if dt_mode true then make i go from length to 1
+                                  // if (state?.dt_mode) {
+                                  //   fakei = (mappable?.length - fakei - 1)
+                                  // }
+
+                                  const i = fakei + 1;
+
+                                  return (
+                                    <option value={uid2 + '_' + i}>
+                                      {screenCount} {orientation} {i}
+                                    </option>
+                                  );
+                                });
+                              })}
+                            </optgroup>
+                          );
+                        })}
+                      </select>
+                    </Box>
+
+                    {/* Toggles Buttons Bottom Emojis */}
+
+                    {/* Screen Selection Dropdown */}
+                    <Box>
+                      <select
+                        style={{
+                          outline: 'none !important',
+                          border: 'none !important',
+                          borderRadius: '8px',
+                          color: 'black',
+                          padding: '6px'
+                        }}
+                        value={`${state?.__screen_no}`}
+                        onChange={(e) => {
+                          const i = e.target.value;
+
+                          if (!(i === state?.__screen_no)) {
+                            setState((state) => {
+                              return {
+                                ...state,
+                                __screen_no: i,
+                                __startingScreen: i,
+                                __screenRange: 1
+                              };
+                            }, 6);
+                          }
+                        }}
+                      >
+                        {/* loop from 1 to no_of_screens to select screen */}
+
+                        {Array.from({ length: state?.__no_of_screens }, (_, i) => {
+                          i = i + 1;
+                          return <option value={i}>Screen {i}</option>;
+                        })}
+                      </select>
+                    </Box>
+                  </Flex>
+
+                  <Flex
+                    userSelect="none"
+                    ml="auto"
+                    marginTop="12"
+                    flexDir="row"
+                    alignItems="center"
+                    justifyContent="flex-end"
+                    gap={'30px 30px'}
+                    maxWidth="100%"
+                    cursor="pointer"
+                    // wrap
+                    wrap="wrap"
+                    display={state?.open ? 'flex' : 'none'}
+                    sx={{
+                      '> *': {
+                        userSelect: 'none'
+                      },
+                      '* select::-ms-expand': {
+                        display: 'none'
+                      }
+                    }}
+                  >
+                    {/* Toggle visibility of debug pull */}
+
+                    <Box
+                      opacity={state?.showDebugPill ? 1 : 0.45}
+                      onClick={() => {
+                        const newVal = !state?.showDebugPill;
+                        set('showDebugPill', newVal);
+                        set('_debugView', newVal);
+                        set('__debugView', newVal);
+                      }}
+                      title="Toggle Debug Pill"
+                    >
+                      🪲
+                    </Box>
+
+                    {/* Toggle Multi View which is where you see titles and multiple screens */}
+                    <Box
+                      opacity={state?.__multiView ? 1 : 0.45}
+                      onClick={() => {
+                        set('__multiView', !state?.__multiView);
+                      }}
+                      title="Toggle Multi View"
+                    >
+                      🌈
+                    </Box>
+
+                    {/* Show all screen sets */}
+                    <Box
+                      opacity={state?.__minScreens === 3 && state?.__maxScreens === 6 && state?.__startingScreen === 1 ? 1 : 0.45}
+                      onClick={() => {
+                        set('__minScreens', 3);
+                        set('__maxScreens', 6);
+                        set('__startingScreen', 1);
+                        set('__screenRange', 6);
+                      }}
+                      title="Show all screen sets"
+                    >
+                      🔢
+                    </Box>
+
+                    {/* Toggle all orientations */}
+
+                    <Box
+                      opacity={state?.__allOrientations ? 1 : 0.45}
+                      onClick={() => {
+                        set('__allOrientations', !state?.__allOrientations);
+                      }}
+                      title="Toggle All Orientations"
+                    >
+                      🫨
+                    </Box>
+
+                    {/* Toggle all dayparts */}
+
+                    <Box
+                      opacity={state?.__allDayparts ? 1 : 0.45}
+                      onClick={() => {
+                        set('__allDayparts', !state?.__allDayparts);
+                      }}
+                      title="Toggle All Dayparts"
+                    >
+                      🕰️
+                    </Box>
+
+                    {/* Toggle __mccafe */}
+
+                    <Box
+                      opacity={state?.__mccafe ? 1 : 0.45}
+                      onClick={() => {
+                        set('__mccafe', !state?.__mccafe);
+                      }}
+                      title="Toggle McCafe"
+                    >
+                      ☕
+                    </Box>
+
+                    {/* Reset Dayparts */}
+
+                    <Box
+                      onClick={() => {
+                        set(
+                          ['__Breakfast', '__MTea', '__Lunch', '__ATea', '__Dinner', '__LateNight', '__Overnight', '__NotBreakfast', '__allDayparts'],
+                          false
+                        );
+                      }}
+                      title="Reset Dayparts"
+                    >
+                      🌅
+                    </Box>
+
+                    {/* Play next video of window.videoPlayers[uid] keys */}
+                    <Box
+                      onClick={() => {
+                        const videoPlayers = window?.videoPlayers || {};
+                        Object.values(videoPlayers)?.forEach((player) => {
+                          player?.();
+                        });
+                        const carouselNexts = window?.carouselNexts || {};
+                        Object.values(carouselNexts)?.forEach((carouselNext) => {
+                          carouselNext?.();
+                        });
+                      }}
+                      title="Play Next Video"
+                    >
+                      ⏩
+                    </Box>
+
+                    {/* Toggle drag and drop position */}
+                    <Box
+                      opacity={state?.mdtPosition ? 1 : 0.45}
+                      onClick={() => {
+                        set('mdtPosition', !state?.mdtPosition);
+                      }}
+                      title="Toggle Drag and Drop Position"
+                    >
+                      ✊
+                    </Box>
+
+                    {/* Flip between __orientation = 'horizontal' and 'vertical' */}
+                    <Box
+                      transform={`rotate(${state?.__orientation === 'vertical' ? 90 : 0}deg)`}
+                      onClick={() => {
+                        const curOrientation = state?.__orientation;
+                        const newOrientation = curOrientation === 'horizontal' ? 'vertical' : 'horizontal';
+                        set('__orientation', newOrientation);
+
+                        set('__horizontal', newOrientation === 'horizontal');
+                        set('__vertical', newOrientation === 'vertical');
+                        set('__allOrientations', false);
+                      }}
+                      title="Toggle Orientation"
+                    >
+                      🔁
+                    </Box>
+
+                    {/* Toggle Horizontal rotation */}
+                    <Box
+                      opacity={state?.__horizontal ? 1 : 0.45}
+                      transform={`rotate(90deg)`}
+                      mt={-10}
+                      onClick={() => {
+                        const newVal = !state?.__horizontal;
+                        set('__horizontal', newVal);
+                        if (newVal) {
+                          set('__orientation', 'horizontal');
+                        }
+                        set('__allOrientations', false);
+                      }}
+                      title="Toggle Orientation"
+                    >
+                      📱
+                    </Box>
+
+                    {/* Toggle Vertical rotation */}
+                    <Box
+                      opacity={state?.__vertical ? 1 : 0.45}
+                      onClick={() => {
+                        const newVal = !state?.__vertical;
+                        if (newVal) {
+                          set('__orientation', 'vertical');
+                        }
+                        set('__vertical', newVal);
+                        set('__allOrientations', false);
+                      }}
+                      title="Toggle Orientation"
+                    >
+                      📱
+                    </Box>
+
+                    {/* Toggle Shoppable */}
+
+                    <Box
+                      opacity={state?.__shoppable ? 1 : 0.45}
+                      onClick={() => {
+                        const newVal = !state?.__shoppable;
+
+                        set('__shoppable', newVal);
+
+                        if (newVal) {
+                          set('dt_mode', false);
+                          // set('__inspiration', false);
+                        }
+                      }}
+                      title="Toggle Shoppable Mode"
+                    >
+                      🏪
+                    </Box>
+
+                    <Box
+                      opacity={state?.__foodcourt ? 1 : 0.45}
+                      onClick={() => {
+                        const newVal = !state?.__foodcourt;
+
+                        set('__foodcourt', newVal);
+
+                        if (newVal) {
+                          set('dt_mode', false);
+                          set('__inspiration', false);
+                        }
+                      }}
+                      title="Toggle Foodcourt Mode"
+                    >
                       🍽️
                     </Box>
-                    Foodcourt
-                  </>
-                )}
-              </Flex>
-            </Flex>
 
-            <Flex
-              overflowY="scroll"
-              display={state?.open && logs?.length && state?.showLogs !== false ? undefined : 'none'}
-              flexDir="column"
-              id="mdt-logs"
-              borderRadius={12}
-              maxH={(window.outerHeight * (state.maxHLog || 0.2)) / scaleRef.current + 'px'}
-              gap={12}
-              // bg="rgba(255,255,255,0.1)"
-              bg="#FFCD2733"
-              fontSize="24px"
-              my={12}
-              p={12}
-            >
-              {logs?.map?.((log, i) => {
-                return (
-                  <Box gap={12} key={i} fontSize="24px">
-                    {log}
-                  </Box>
-                );
-              })}
-            </Flex>
+                    <Box
+                      opacity={state?.__inspiration ? 1 : 0.45}
+                      onClick={() => {
+                        const newVal = !state?.__inspiration;
+                        set('__inspiration', newVal);
 
-            <Flex
-              overflowY="scroll"
-              display={state?.open && state?.showSearch !== false ? undefined : 'none'}
-              maxH={(window.outerHeight * (state.maxHSearch || 0.5)) / scaleRef.current + 'px'}
-              flexDir="column"
-              id="csv-search"
-              borderRadius={12}
-              gap={12}
-              fontSize="24px"
-              my={12}
-              p={12}
-            >
-              <Input
-                outline="none !important"
-                px={8}
-                py={16}
-                type="search"
-                color="black"
-                borderRadius={12}
-                fontWeight="normal"
-                placeholder="McSearch"
-                onChange={(e) => {
-                  const val = e.target.value;
-                  searchSwitchboardDebounced(val);
-                }}
-              />
+                        // set drive thru mode to false because it breaks inspiration view
+                        if (newVal) {
+                          set('dt_mode', false);
+                          set('__foodcourt', false);
+                        }
+                      }}
+                      title="Toggle Inspiration Mode"
+                    >
+                      🙏
+                    </Box>
 
-              {searchResults?.length && (
-                <Flex maxWidth="100%" flexDir="column" bg="rgba(255,255,255,0.1)" gap={8} fontSize="24px" my={12} p={12}>
-                  {searchResults?.map?.((result, i) => {
-                    return (
-                      <Box overflowX="scroll" maxWidth="100%" gap={12} key={i} fontSize="24px">
-                        {typeof result === 'string' ? (
-                          result
-                        ) : (
-                          <pre
-                            style={{
-                              maxWidth: 100 / screenScale + 'px'
-                            }}
-                          >
-                            {JSON.stringify(result, null, 2)}
-                          </pre>
-                        )}
-                        {/* {result} */}
+                    <Box
+                      opacity={state?.tailwindStyling ? 1 : 0.45}
+                      onClick={() => {
+                        set('tailwindStyling', !state?.tailwindStyling);
+                      }}
+                      title="Toggle Tailwind Position Syntax"
+                    >
+                      🐒
+                      {/* 💨 */}
+                    </Box>
+
+                    <Box
+                      onClick={() => {
+                        const newVal = !state?.dt_mode;
+                        set('dt_mode', newVal);
+
+                        if (newVal) {
+                          set('__area', 'DriveThru');
+                          set('__screenRange', 3);
+                          set('__minScreens', 3);
+                          set('__maxScreens', 3);
+                          set('__inspiration', false);
+                          set('__foodcourt', false);
+                          set('__orientation', 'vertical');
+                          set('__vertical', true);
+                          set('__horizontal', false);
+                        }
+                      }}
+                      title="Toggle Drive Thru Mode (Reverse Order of Screens)"
+                      opacity={state?.dt_mode ? 1 : 0.45}
+                    >
+                      🚘
+                    </Box>
+
+                    {/* toggle screenBorders */}
+                    <Box
+                      opacity={state?.screenBorders ? 1 : 0.45}
+                      onClick={() => {
+                        set('screenBorders', !state?.screenBorders);
+                      }}
+                      title="Toggle Screen Borders"
+                    >
+                      🫥
+                    </Box>
+
+                    {/* Toggle refreshing on change */}
+
+                    <Box
+                      opacity={state?.__refresh ? 1 : 0.45}
+                      onClick={() => {
+                        set('__refresh', !state?.__refresh);
+                      }}
+                      title="Toggle Refresh on Change"
+                    >
+                      🌀
+                    </Box>
+
+                    <Box
+                      // opacity={state?.refresh ? 1 : 0.45}
+                      onClick={() => {
+                        window.location.reload();
+                      }}
+                      title="Refresh NOW"
+                    >
+                      🌊
+                    </Box>
+
+                    <Box title="Toggle Figma Previews">
+                      <Box
+                        opacity={state?.figmaPreview ? 1 : 0.45}
+                        onClick={() => {
+                          set('figmaPreview', state?.figmaPreview ? 0 : 0.3);
+                        }}
+                      >
+                        🥷
                       </Box>
-                    );
-                  })}
-                </Flex>
-              )}
-            </Flex>
+                    </Box>
 
-            {/* This will render all state and allow all values to be editable with special interactions for certain state values/types depending on schema */}
-            <Box
-              display={state?.open && !state?.hideData ? 'block' : 'none'}
-              // maxH={state?.varsMaxH}
-              maxH={(window.outerHeight * (state.maxHData || 0.3)) / scaleRef.current + 'px'}
-              w={'auto'}
-              overflowY="scroll"
-            >
-              {Object.entries(groups || {})
-                ?.sort(([key1, value1], [key2, value2]) => {
-                  // sort with pinned first
-                  if (state?.[key1] && !state?.[key2]) {
-                    return -1;
-                  } else if (!state?.[key1] && state?.[key2]) {
-                    return 1;
-                  } else {
-                    // return key1?.localeCompare?.(key2)
-                  }
-                })
-                ?.map(([groupName, keys]) => {
-                  return (
+                    {/* Slider for figma preview opacity */}
+                    <Box position="relative" w="100px" title="Adjust Figma Previews">
+                      <Slider
+                        aria-label="slider-ex-1"
+                        defaultValue={state?.figmaPreview * 100}
+                        onChange={(val) => {
+                          set('figmaPreview', val / 100);
+                        }}
+                      >
+                        <SliderTrack h="5px" bg="white">
+                          <SliderFilledTrack h="100%" bg="rgba(0,0,0,0.3)" />
+                        </SliderTrack>
+                        <SliderThumb>
+                          <Box bg="white" mt={-7} h="15px" w="15px" borderRadius="9999px" />
+                        </SliderThumb>
+                      </Slider>
+                    </Box>
+
+                    {/* Slider for current El scale */}
+                    <Box position="relative" w="100px" title="Adjust Figma Previews">
+                      <Slider
+                        aria-label="slider-ex-2"
+                        defaultValue={elScale * 100}
+                        onChange={(val) => {
+                          setElScale(val / 100);
+                        }}
+                        // max value 300
+                        max={300}
+                      >
+                        <SliderTrack h="5px" bg="white">
+                          <SliderFilledTrack h="100%" bg="rgba(0,0,0,0.3)" />
+                        </SliderTrack>
+                        <SliderThumb>
+                          <Box bg="white" mt={-7} h="15px" w="15px" borderRadius="9999px" />
+                        </SliderThumb>
+                      </Slider>
+                    </Box>
+                    <Box title="Toggle Figma Previews">
+                      <Box
+                        onClick={() => {
+                          // copy value to clipboard
+                          try {
+                            copyWithNotification(`scale-[${elScale}]`);
+                          } catch (err) {
+                            console.error('Error copying elScale to clipboard', err);
+                          }
+                        }}
+                      >
+                        🎁
+                      </Box>
+                    </Box>
+
+                    {/* Toggle Search */}
+
                     <Box>
-                      <Box my={12} mt={48}>
-                        <Box fontSize="36px" display="inline-block" position="relative">
-                          {groupName}
-                          <Box
-                            position="absolute"
-                            transform="translate(100%, -50%)"
-                            right={0}
-                            cursor="pointer"
-                            top={0}
-                            title="Sticky Group"
-                            fontSize={'26px'}
-                            opacity={state?.[groupName] ? 1 : 0.5}
-                            onClick={() => {
-                              // pin group on click
-                              set(groupName, !state?.[groupName]);
-                            }}
-                          >
-                            💛
-                          </Box>
+                      <Box
+                        opacity={state?.showSearch ? 1 : 0.45}
+                        onClick={() => {
+                          set('showSearch', !state?.showSearch);
+                        }}
+                        title="Toggle Search"
+                      >
+                        🔍
+                      </Box>
+                    </Box>
+
+                    {/* Toggle Logs */}
+                    <Box title="Toggle Logs">
+                      <Box
+                        opacity={state?.showLogs ? 1 : 0.45}
+                        onClick={() => {
+                          set('showLogs', !state?.showLogs);
+                        }}
+                      >
+                        📜
+                      </Box>
+                    </Box>
+
+                    <Box title="Toggle Screen Names">
+                      <Box
+                        opacity={state?.screenNames ? 1 : 0.45}
+                        onClick={() => {
+                          set('screenNames', state?.screenNames ? 0 : 0.3);
+                        }}
+                      >
+                        🪧
+                      </Box>
+                    </Box>
+
+                    <Box title="Show Debug State">
+                      <Box
+                        opacity={!state?.hideData ? 1 : 0.45}
+                        onClick={() => {
+                          set('hideData', !state?.hideData);
+                        }}
+                      >
+                        ✏️
+                      </Box>
+                    </Box>
+
+                    <Flex>
+                      <Box
+                        title="Scale Down McDev"
+                        py={3}
+                        textAlign="center"
+                        bg="#FFCD27"
+                        borderRadius="8px"
+                        width="80px"
+                        ml="auto"
+                        onClick={decreaseScale}
+                      >
+                        <Box mt={3} fontSize="28px">
+                          -
                         </Box>
                       </Box>
-                      {/* <Flex width="100%" flexShrink={1} maxWidth={"700px"} flexWrap="wrap"> */}
-                      {keys?.map((keyObj) => {
-                        const key = typeof keyObj === 'string' ? keyObj : keyObj?.key;
-
-                        return stateInput({ key, value: state?.[key], note: keyObj?.note });
-                      })}
-                      {/* </Flex> */}
-                    </Box>
-                  );
-                })}
-
-              <Box fontSize="36px" my={12} mt={48}>
-                All
-              </Box>
-              {sortedState?.map(([key, value]) => {
-                return stateInput({ key, value });
-              })}
-            </Box>
-
-            <Flex
-              userSelect="none"
-              ml="auto"
-              marginTop="12"
-              flexDir="row"
-              alignItems="center"
-              cursor="pointer"
-              display={state?.open ? 'flex' : 'none'}
-              sx={{
-                '> *': {
-                  userSelect: 'none'
-                },
-                '* select::-ms-expand': {
-                  display: 'none'
-                }
-              }}
-            >
-              {/* Area Selection Dropdown */}
-              <Box
-                // lower gap for these
-                mr={16}
-              >
-                <select
-                  style={{
-                    outline: 'none !important',
-                    border: 'none !important',
-                    borderRadius: '8px',
-                    color: 'black',
-                    padding: '6px'
-                  }}
-                  onChange={(e) => {
-                    const newVal = e.target.value;
-                    set(['area', '__area'], newVal);
-                  }}
-                  value={state?.area}
-                >
-                  {areas.map((val) => {
-                    return <option key={val}>{val}</option>;
-                  })}
-                </select>
-              </Box>
-
-              {/* Daypart Selection Dropdown */}
-              <Box mr={16}>
-                <select
-                  style={{
-                    outline: 'none !important',
-                    border: 'none !important',
-                    borderRadius: '8px',
-                    color: 'black',
-                    padding: '6px'
-                  }}
-                  onChange={(e) => {
-                    const newVal = e.target.value;
-                    set(['daypart', '__daypart'], newVal);
-                    set(`__${newVal}`, true);
-
-                    // unset all other dayparts
-                    // '__allDayparts',
-                    // '__Breakfast',
-                    // '__MTea',
-                    // '__Lunch',
-                    // '__ATea',
-                    // '__Dinner',
-                    // '__LateNight',
-                    // '__Overnight',
-                    // '__NotBreakfast'
-
-                    const filteredDayparts = dayparts.filter((val) => val !== newVal)?.map((val) => '__' + val);
-                    set(['__allDayparts', ...filteredDayparts], false);
-                  }}
-                  value={state?.daypart}
-                >
-                  {dayparts.map((val) => {
-                    return <option key={val}>{val}</option>;
-                  })}
-                </select>
-              </Box>
-
-              {/* Screen Selection Dropdown */}
-              <Box mr={16}>
-                <select
-                  style={{
-                    outline: 'none !important',
-                    border: 'none !important',
-                    borderRadius: '8px',
-                    color: 'black',
-                    padding: '6px'
-                  }}
-                  value={`${state?.__no_of_screens}_${state?.__orientation}_${state?.__screen_no}`}
-                  onChange={(e) => {
-                    const val = e.target.value;
-
-                    const [screenCount, orientation, i] = val.split('_');
-
-                    if (!(i === state?.__screen_no && orientation === state?.__orientation && screenCount === state?.__no_of_screens)) {
-                      setState((state) => {
-                        return {
-                          ...state,
-                          __no_of_screens: screenCount,
-                          __startingScreen: 1,
-                          __screenRange: screenCount,
-                          __maxScreens: screenCount,
-                          __minScreens: screenCount,
-                          __screen_no: i,
-                          __orientation: orientation
-                        };
-                      }, 6);
-
-                      // set __horizontal and __vertical according to new orientation switch
-
-                      set('__horizontal', orientation === 'horizontal');
-                      set('__vertical', orientation === 'vertical');
-                      set('__allOrientations', false);
-                    }
-                  }}
-                >
-                  {/* Flatten allPreviews into options of number of screens + screen # for that bank */}
-                  {allPreviews?.map((nScreens) => {
-                    const screenCount = nScreens?.[0]?.__no_of_screens;
-
-                    const uid = `show${screenCount}`;
-
-                    return (
-                      <optgroup label={screenCount + ' Screens'}>
-                        {nScreens.map((bank) => {
-                          const orientation = bank.__orientation;
-
-                          const uid2 = `${screenCount}_${orientation}`;
-
-                          const mappable = Array(bank?.__no_of_screens).fill();
-
-                          return mappable.map((_, fakei) => {
-                            // if dt_mode true then make i go from length to 1
-                            // if (state?.dt_mode) {
-                            //   fakei = (mappable?.length - fakei - 1)
-                            // }
-
-                            const i = fakei + 1;
-
-                            return (
-                              <option value={uid2 + '_' + i}>
-                                {screenCount} {orientation} {i}
-                              </option>
-                            );
-                          });
-                        })}
-                      </optgroup>
-                    );
-                  })}
-                </select>
-              </Box>
-
-              {/* Toggles Buttons Bottom Emojis */}
-
-              {/* Screen Selection Dropdown */}
-              <Box mr={16}>
-                <select
-                  style={{
-                    outline: 'none !important',
-                    border: 'none !important',
-                    borderRadius: '8px',
-                    color: 'black',
-                    padding: '6px'
-                  }}
-                  value={`${state?.__screen_no}`}
-                  onChange={(e) => {
-                    const i = e.target.value;
-
-                    if (!(i === state?.__screen_no)) {
-                      setState((state) => {
-                        return {
-                          ...state,
-                          __screen_no: i,
-                          __startingScreen: i,
-                          __screenRange: 1
-                        };
-                      }, 6);
-                    }
-                  }}
-                >
-                  {/* loop from 1 to no_of_screens to select screen */}
-
-                  {Array.from({ length: state?.__no_of_screens }, (_, i) => {
-                    i = i + 1;
-                    return <option value={i}>Screen {i}</option>;
-                  })}
-                </select>
-              </Box>
-
-              {/* Toggle visibility of debug pull */}
-
-              <Box
-                mr={64}
-                opacity={state?.showDebugPill ? 1 : 0.45}
-                onClick={() => {
-                  const newVal = !state?.showDebugPill;
-                  set('showDebugPill', newVal);
-                  set('_debugView', newVal);
-                  set('__debugView', newVal);
-                }}
-                title="Toggle Debug Pill"
-              >
-                🪲
-              </Box>
-
-              {/* Toggle Multi View which is where you see titles and multiple screens */}
-              <Box
-                mr={32}
-                opacity={state?.__multiView ? 1 : 0.45}
-                onClick={() => {
-                  set('__multiView', !state?.__multiView);
-                }}
-                title="Toggle Multi View"
-              >
-                🌈
-              </Box>
-
-              {/* Show all screen sets */}
-              <Box
-                mr={32}
-                opacity={state?.__minScreens === 3 && state?.__maxScreens === 6 && state?.__startingScreen === 1 ? 1 : 0.45}
-                onClick={() => {
-                  set('__minScreens', 3);
-                  set('__maxScreens', 6);
-                  set('__startingScreen', 1);
-                  set('__screenRange', 6);
-                }}
-                title="Show all screen sets"
-              >
-                🔢
-              </Box>
-
-              {/* Toggle all orientations */}
-
-              <Box
-                mr={32}
-                opacity={state?.__allOrientations ? 1 : 0.45}
-                onClick={() => {
-                  set('__allOrientations', !state?.__allOrientations);
-                }}
-                title="Toggle All Orientations"
-              >
-                🫨
-              </Box>
-
-              {/* Toggle all dayparts */}
-
-              <Box
-                mr={32}
-                opacity={state?.__allDayparts ? 1 : 0.45}
-                onClick={() => {
-                  set('__allDayparts', !state?.__allDayparts);
-                }}
-                title="Toggle All Dayparts"
-              >
-                🕰️
-              </Box>
-
-              {/* Toggle __mccafe */}
-
-              <Box
-                mr={32}
-                opacity={state?.__mccafe ? 1 : 0.45}
-                onClick={() => {
-                  set('__mccafe', !state?.__mccafe);
-                }}
-                title="Toggle McCafe"
-              >
-                ☕
-              </Box>
-
-              {/* Reset Dayparts */}
-
-              <Box
-                mr={32}
-                onClick={() => {
-                  set(
-                    ['__Breakfast', '__MTea', '__Lunch', '__ATea', '__Dinner', '__LateNight', '__Overnight', '__NotBreakfast', '__allDayparts'],
-                    false
-                  );
-                }}
-                title="Reset Dayparts"
-              >
-                🌅
-              </Box>
-
-              {/* Play next video of window.videoPlayers[uid] keys */}
-              <Box
-                mr={32}
-                onClick={() => {
-                  const videoPlayers = window?.videoPlayers || {};
-                  Object.values(videoPlayers)?.forEach((player) => {
-                    player?.();
-                  });
-                  const carouselNexts = window?.carouselNexts || {};
-                  Object.values(carouselNexts)?.forEach((carouselNext) => {
-                    carouselNext?.();
-                  });
-                }}
-                title="Play Next Video"
-              >
-                ⏩
-              </Box>
-
-              {/* Toggle drag and drop position */}
-              <Box
-                mr={32}
-                opacity={state?.mdtPosition ? 1 : 0.45}
-                onClick={() => {
-                  set('mdtPosition', !state?.mdtPosition);
-                }}
-                title="Toggle Drag and Drop Position"
-              >
-                ✊
-              </Box>
-
-              {/* Flip between __orientation = 'horizontal' and 'vertical' */}
-              <Box
-                mr={32}
-                transform={`rotate(${state?.__orientation === 'vertical' ? 90 : 0}deg)`}
-                onClick={() => {
-                  const curOrientation = state?.__orientation;
-                  const newOrientation = curOrientation === 'horizontal' ? 'vertical' : 'horizontal';
-                  set('__orientation', newOrientation);
-
-                  set('__horizontal', newOrientation === 'horizontal');
-                  set('__vertical', newOrientation === 'vertical');
-                  set('__allOrientations', false);
-                }}
-                title="Toggle Orientation"
-              >
-                🔁
-              </Box>
-
-              {/* Toggle Horizontal rotation */}
-              <Box
-                mr={32}
-                opacity={state?.__horizontal ? 1 : 0.45}
-                transform={`rotate(90deg)`}
-                mt={-10}
-                onClick={() => {
-                  const newVal = !state?.__horizontal;
-                  set('__horizontal', newVal);
-                  if (newVal) {
-                    set('__orientation', 'horizontal');
-                  }
-                  set('__allOrientations', false);
-                }}
-                title="Toggle Orientation"
-              >
-                📱
-              </Box>
-
-              {/* Toggle Vertical rotation */}
-              <Box
-                mr={32}
-                opacity={state?.__vertical ? 1 : 0.45}
-                onClick={() => {
-                  const newVal = !state?.__vertical;
-                  if (newVal) {
-                    set('__orientation', 'vertical');
-                  }
-                  set('__vertical', newVal);
-                  set('__allOrientations', false);
-                }}
-                title="Toggle Orientation"
-              >
-                📱
-              </Box>
-
-              {/* Toggle Shoppable */}
-
-              <Box
-                mr={32}
-                opacity={state?.__shoppable ? 1 : 0.45}
-                onClick={() => {
-                  const newVal = !state?.__shoppable;
-
-                  set('__shoppable', newVal);
-
-                  if (newVal) {
-                    set('dt_mode', false);
-                    // set('__inspiration', false);
-                  }
-                }}
-                title="Toggle Shoppable Mode"
-              >
-                🏪
-              </Box>
-
-              <Box
-                mr={32}
-                opacity={state?.__foodcourt ? 1 : 0.45}
-                onClick={() => {
-                  const newVal = !state?.__foodcourt;
-
-                  set('__foodcourt', newVal);
-
-                  if (newVal) {
-                    set('dt_mode', false);
-                    set('__inspiration', false);
-                  }
-                }}
-                title="Toggle Foodcourt Mode"
-              >
-                🍽️
-              </Box>
-
-              <Box
-                mr={32}
-                opacity={state?.__inspiration ? 1 : 0.45}
-                onClick={() => {
-                  const newVal = !state?.__inspiration;
-                  set('__inspiration', newVal);
-
-                  // set drive thru mode to false because it breaks inspiration view
-                  if (newVal) {
-                    set('dt_mode', false);
-                    set('__foodcourt', false);
-                  }
-                }}
-                title="Toggle Inspiration Mode"
-              >
-                🙏
-              </Box>
-
-              <Box
-                mr={32}
-                opacity={state?.tailwindStyling ? 1 : 0.45}
-                onClick={() => {
-                  set('tailwindStyling', !state?.tailwindStyling);
-                }}
-                title="Toggle Tailwind Position Syntax"
-              >
-                🐒
-                {/* 💨 */}
-              </Box>
-
-              <Box
-                mr={32}
-                onClick={() => {
-                  const newVal = !state?.dt_mode;
-                  set('dt_mode', newVal);
-
-                  if (newVal) {
-                    set('__area', 'DriveThru');
-                    set('__screenRange', 3);
-                    set('__minScreens', 3);
-                    set('__maxScreens', 3);
-                    set('__inspiration', false);
-                    set('__foodcourt', false);
-                    set('__orientation', 'vertical');
-                    set('__vertical', true);
-                    set('__horizontal', false);
-                  }
-                }}
-                title="Toggle Drive Thru Mode (Reverse Order of Screens)"
-                opacity={state?.dt_mode ? 1 : 0.45}
-              >
-                🚘
-              </Box>
-
-              {/* toggle screenBorders */}
-              <Box
-                mr={32}
-                opacity={state?.screenBorders ? 1 : 0.45}
-                onClick={() => {
-                  set('screenBorders', !state?.screenBorders);
-                }}
-                title="Toggle Screen Borders"
-              >
-                🫥
-              </Box>
-
-              {/* Toggle refreshing on change */}
-
-              <Box
-                mr={32}
-                opacity={state?.__refresh ? 1 : 0.45}
-                onClick={() => {
-                  set('__refresh', !state?.__refresh);
-                }}
-                title="Toggle Refresh on Change"
-              >
-                🌀
-              </Box>
-
-              <Box
-                mr={32}
-                // opacity={state?.refresh ? 1 : 0.45}
-                onClick={() => {
-                  window.location.reload();
-                }}
-                title="Refresh NOW"
-              >
-                🌊
-              </Box>
-
-              <Box mr={32} title="Toggle Figma Previews">
-                <Box
-                  opacity={state?.figmaPreview ? 1 : 0.45}
-                  onClick={() => {
-                    set('figmaPreview', state?.figmaPreview ? 0 : 0.3);
-                  }}
-                >
-                  🥷
+                      <Box
+                        title="Scale Up McDev"
+                        ml={16}
+                        py={3}
+                        textAlign="center"
+                        bg="#FFCD27"
+                        borderRadius="8px"
+                        width="80px"
+                        onClick={increaseScale}
+                      >
+                        <Box mt={3} fontSize="28px">
+                          +
+                        </Box>
+                      </Box>
+                    </Flex>
+                  </Flex>
                 </Box>
-              </Box>
-
-              {/* Slider for figma preview opacity */}
-              <Box mr={32} position="relative" w="100px" title="Adjust Figma Previews">
-                <Slider
-                  aria-label="slider-ex-1"
-                  defaultValue={state?.figmaPreview * 100}
-                  onChange={(val) => {
-                    set('figmaPreview', val / 100);
-                  }}
-                >
-                  <SliderTrack h="5px" bg="white">
-                    <SliderFilledTrack h="100%" bg="rgba(0,0,0,0.3)" />
-                  </SliderTrack>
-                  <SliderThumb>
-                    <Box bg="white" mt={-7} h="15px" w="15px" borderRadius="9999px" />
-                  </SliderThumb>
-                </Slider>
-              </Box>
-
-              {/* Slider for current El scale */}
-              <Box mr={32} position="relative" w="100px" title="Adjust Figma Previews">
-                <Slider
-                  aria-label="slider-ex-2"
-                  defaultValue={elScale * 100}
-                  onChange={(val) => {
-                    setElScale(val / 100);
-                  }}
-                  // max value 300
-                  max={300}
-                >
-                  <SliderTrack h="5px" bg="white">
-                    <SliderFilledTrack h="100%" bg="rgba(0,0,0,0.3)" />
-                  </SliderTrack>
-                  <SliderThumb>
-                    <Box bg="white" mt={-7} h="15px" w="15px" borderRadius="9999px" />
-                  </SliderThumb>
-                </Slider>
-              </Box>
-              <Box mr={32} title="Toggle Figma Previews">
-                <Box
-                  onClick={() => {
-                    // copy value to clipboard
-                    try {
-                      copyWithNotification(`scale-[${elScale}]`);
-                    } catch (err) {
-                      console.error('Error copying elScale to clipboard', err);
-                    }
-                  }}
-                >
-                  🎁
-                </Box>
-              </Box>
-
-              {/* Toggle Search */}
-
-              <Box mr={32}>
-                <Box
-                  opacity={state?.showSearch ? 1 : 0.45}
-                  onClick={() => {
-                    set('showSearch', !state?.showSearch);
-                  }}
-                  title="Toggle Search"
-                >
-                  🔍
-                </Box>
-              </Box>
-
-              {/* Toggle Logs */}
-              <Box mr={32} title="Toggle Logs">
-                <Box
-                  opacity={state?.showLogs ? 1 : 0.45}
-                  onClick={() => {
-                    set('showLogs', !state?.showLogs);
-                  }}
-                >
-                  📜
-                </Box>
-              </Box>
-
-              <Box mr={32} title="Toggle Screen Names">
-                <Box
-                  opacity={state?.screenNames ? 1 : 0.45}
-                  onClick={() => {
-                    set('screenNames', state?.screenNames ? 0 : 0.3);
-                  }}
-                >
-                  🪧
-                </Box>
-              </Box>
-
-              <Box mr={32} title="Show Debug State">
-                <Box
-                  opacity={!state?.hideData ? 1 : 0.45}
-                  onClick={() => {
-                    set('hideData', !state?.hideData);
-                  }}
-                >
-                  ✏️
-                </Box>
-              </Box>
-
-              <Flex>
-                <Box
-                  title="Scale Down McDev"
-                  py={3}
-                  textAlign="center"
-                  bg="#FFCD27"
-                  borderRadius="8px"
-                  width="80px"
-                  ml="auto"
-                  onClick={decreaseScale}
-                >
-                  <Box mt={3} fontSize="28px">
-                    -
-                  </Box>
-                </Box>
-                <Box title="Scale Up McDev" ml={16} py={3} textAlign="center" bg="#FFCD27" borderRadius="8px" width="80px" onClick={increaseScale}>
-                  <Box mt={3} fontSize="28px">
-                    +
-                  </Box>
-                </Box>
-              </Flex>
-            </Flex>
-          </Box>
+              </Resizable>
+            </>
+          )}
         </Box>
       </Box>
     </>
@@ -2481,3 +2594,78 @@ root.render(
     <RouterProvider router={router}></RouterProvider>
   </React.StrictMode>
 );
+
+// css
+const css = `
+.react-resizable {
+  // position: relative;
+}
+.react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  box-sizing: border-box;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2IDYiIHN0eWxlPSJiYWNrZ3JvdW5kLWNvbG9yOiNmZmZmZmYwMCIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSI2cHgiIGhlaWdodD0iNnB4Ij48ZyBvcGFjaXR5PSIwLjMwMiI+PHBhdGggZD0iTSA2IDYgTCAwIDYgTCAwIDQuMiBMIDQgNC4yIEwgNC4yIDQuMiBMIDQuMiAwIEwgNiAwIEwgNiA2IEwgNiA2IFoiIGZpbGw9IiMwMDAwMDAiLz48L2c+PC9zdmc+');
+  background-position: bottom right;
+  padding: 0 3px 3px 0;
+}
+.react-resizable-handle-sw {
+  bottom: 0;
+  left: 0;
+  cursor: sw-resize;
+  transform: rotate(90deg);
+}
+.react-resizable-handle-se {
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+}
+.react-resizable-handle-nw {
+  top: 0;
+  left: 0;
+  cursor: nw-resize;
+  transform: rotate(180deg);
+}
+.react-resizable-handle-ne {
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+  transform: rotate(270deg);
+}
+.react-resizable-handle-w,
+.react-resizable-handle-e {
+  top: 50%;
+  margin-top: -10px;
+  cursor: ew-resize;
+}
+.react-resizable-handle-w {
+  left: 0;
+  transform: rotate(135deg);
+}
+.react-resizable-handle-e {
+  right: 0;
+  transform: rotate(315deg);
+}
+.react-resizable-handle-n,
+.react-resizable-handle-s {
+  left: 50%;
+  margin-left: -10px;
+  cursor: ns-resize;
+}
+.react-resizable-handle-n {
+  top: 0;
+  transform: rotate(225deg);
+}
+.react-resizable-handle-s {
+  bottom: 0;
+  transform: rotate(45deg);
+}
+`;
+
+const style = document.createElement('style');
+style.innerHTML = css;
+
+// attach to body
+document.body.appendChild(style);

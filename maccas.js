@@ -16,7 +16,7 @@ try {
   (async () => {
     const href = window.location.href;
 
-    if (href?.includes('mdt=true')) {
+    if (!href?.includes('mdt=false')) {
       let success = false;
 
       try {
@@ -105,6 +105,12 @@ try {
             
             import * as ChakraUI from 'https://esm.sh/@chakra-ui/react@2.7.1';
             window.ChakraUI = ChakraUI
+            
+            import { Resizable } from 'https://esm.sh/react-resizable@3.0.5';
+            window.Resizable = Resizable
+            
+            import Draggable from 'https://esm.sh/react-draggable@4.4.6';
+            window.Draggable = Draggable
             
             import domtoimage from 'https://esm.sh/dom-to-image';
             window.domtoimage = domtoimage
