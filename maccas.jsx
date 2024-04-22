@@ -1732,6 +1732,7 @@ const App = (props) => {
                   maxH={(window.outerHeight * 0.8) / scaleRef.current + 'px'}
                   height={state?.open ? state?.resizableHeight : 'auto'}
                   width={state?.open ? state?.resizableWidth : 'auto'}
+                  maxW={(window.outerWidth * 0.6) / scaleRef.current + 'px'}
                   borderRadius="16px"
                   bg="#DD2514"
                   pointerEvents="all"
