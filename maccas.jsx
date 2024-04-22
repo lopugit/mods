@@ -94,6 +94,7 @@ const defaultState = {
   // __minScreens: 3,
   // __maxScreens: 6,
   __area: 'FrontCounter',
+  debug: true,
   __daypart: 'Lunch',
   __country: 'AU',
   contextFields: '__orientation,__no_of_screens,__screen_no,__daypart,__country,__time,__channel,__screenNo,__noOfScreens'
